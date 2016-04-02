@@ -158,7 +158,7 @@ function PetControl:Init()
 		end
 	end
 	
-	self.Btn_AllSeal:addInputEvent("Mouse_LUp", "HandleClicked_petControl_AllSeal()")
+	self.Btn_AllSeal:addInputEvent("Mouse_LUp", "HandleClicked_petControl_AllUnSeal()")
 	btnPetIcon:addInputEvent( "Mouse_LUp",	"FGlobal_PetListNew_Toggle()" )
 	btnPetIcon:addInputEvent( "Mouse_RUp",	"Panel_Window_PetControl_ShowToggle()" )
 	btnPetIcon:addInputEvent( "Mouse_On",	"petControl_Button_Tooltip( true, 99 )" )
@@ -250,10 +250,6 @@ end
 local firstPetLoad = false			-- UI가 리로드 되는 상황(죽음 등)에 펫 명령을 초기화 해주기 위한 변수
 local showIndex = -1
 function FGlobal_PetControl_CheckUnSealPet( petNo_s64 )
-	if (getContentsServiceType() ~= CppEnums.ContentsServiceType.eContentsServiceType_Commercial) then
-		return
-	end
-
 	if isFlushedUI() then
 		return
 	end
@@ -336,8 +332,13 @@ function FGlobal_PetControl_CheckUnSealPet( petNo_s64 )
 					end
 				end
 				
+				-- local isCheckTalent = PetUnSealData:getSkillParam(1):isPassiveSkill()
+				-- self._find:SetCheck( not isCheckTalent )
+				-- self._yellowDotIcon	:SetShow( isCheckTalent )
+				-- self._grayDotIcon1	:SetShow( not isCheckTalent )
+				
 				local petRace = unsealPetStaticStatus:getPetRace()
-				if 4 == petRace or 5 == petRace then
+				if 4 == petRace or 5 == petRace or 7 == petRace or 8 == petRace then		-- 4, 5, 7은 특기가 항상 켜져 있게 한다
 					self._find:SetCheck( false )
 					self._yellowDotIcon	:SetShow( true )
 					self._grayDotIcon1	:SetShow( false )
@@ -494,13 +495,17 @@ end
 function PetTalentCheck( index )
 	local petCount = ToClient_getPetUnsealedList()
 	if petCount == 0 then
-		return
+		return false
 	end
 	
 	local petData = ToClient_getPetUnsealedDataByIndex( index )
 	local petRace = petData:getPetStaticStatus():getPetRace()
+	-- _PA_LOG("이문종", "petData = " .. tostring(petData) .. " / " .. tostring(petData:getPetStaticStatus():getPetRace()))
 	
-	if 4 == petRace or 5 == petRace then
+	
+	-- return petData:getSkillParam(1):isPassiveSkill()
+	
+	if 4 == petRace or 5 == petRace or 7 == petRace or 8 == petRace then
 		return true
 	end
 	return false
@@ -591,7 +596,7 @@ function HandleClicked_petControl_Seal( index )
 	FGlobal_AllSealButtonPosition( unSealPetInfo, false)
 end
 
-function HandleClicked_petControl_AllSeal()
+function HandleClicked_petControl_AllUnSeal()
 	for index=0, maxUnsealCount - 1 do
 		local self = petIcon[index]
 		local unSealPetInfo			= ToClient_getPetUnsealedList()
@@ -604,8 +609,8 @@ function HandleClicked_petControl_AllSeal()
 	end
 end
 
-function FGlobal_HandleClicked_petControl_AllSeal()
-	HandleClicked_petControl_AllSeal()
+function FGlobal_HandleClicked_petControl_AllUnSeal()
+	HandleClicked_petControl_AllUnSeal()
 end
 
 local unSealPetCounting = 0

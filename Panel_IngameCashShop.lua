@@ -24,6 +24,23 @@ local   inGameShop  =   {
 			_gapY       = 56,
 			_gapYY      = 65,
 		},
+		_item	= 
+		{
+			_startX		= 0,
+			_startY		= 25,
+			_gapX		= 35,
+		},
+		_relatedItem = 
+		{
+			_startX		= 0,
+			_startY		= 25,
+			_gapX		= 35,
+		},
+		_desc = 
+		{
+			_startY		= 140,
+			_gapY		= 25,
+		},
 	},
 	
 	_const  =
@@ -44,6 +61,9 @@ local   inGameShop  =   {
 	_static_SideLineRight       = UI.getChildControl( Panel_IngameCashShop, "Static_SideLineRight"),
 	_scroll_IngameCash          = UI.getChildControl( Panel_IngameCashShop, "Scroll_IngameCash"),
 	_static_ScrollArea          = UI.getChildControl( Panel_IngameCashShop, "Static_ScrollArea"),
+	_static_ScrollArea1			= UI.getChildControl( Panel_IngameCashShop, "Static_ScrollArea_1"),
+	_static_ScrollArea2			= UI.getChildControl( Panel_IngameCashShop, "Static_ScrollArea_2"),
+
 	_static_Construction        = UI.getChildControl( Panel_IngameCashShop, "Static_Construction"),
 	
 
@@ -68,8 +88,37 @@ local   inGameShop  =   {
 	_btn_BuyDaum                = UI.getChildControl( Panel_IngameCashShop, "Button_BuyDaum"),
 	_btn_RefreshCash            = UI.getChildControl( Panel_IngameCashShop, "Button_RefreshCash"),
 
+	desc = 
+	{
+		-- 그룹 상품 관련
+		_static_ItemNameCombo		= nil,
+
+		-- 상품 기본 정보
+		_staticText_Title			= nil,
+		_static_SlotBG				= nil,
+		_static_Slot				= nil,
+		_static_Desc				= nil,
+		-- 상품 추가 정보
+		_staticText_PurchaseLimit	= nil,
+		_static_VestedDesc			= nil,
+		_static_TradeDesc			= nil,
+		_static_ClassDesc			= nil,
+		_static_WarningDesc			= nil,
+		_static_DiscountPeriodDesc	= nil,
+		_static_ItemListTitle		= nil,
+		-- 관련 상품
+		_static_RelatedItemTitle	= nil,
+	},
+
+	_itemCount					= 10,
+	_items						= Array.new(),
+	_relatedItems				= Array.new(),
+	_comboList					= Array.new(),
+	_listComboCount				= 1,
+	itemDescDetailSize			= 0,
+
 	_openFunction               = false,
-	_openProductKeyRaw          = 0,
+	_openProductKeyRaw          = -1,
 	_categoryWeb                = nil,
 	_promotionWeb               = nil,
 	_promotionSizeY             = 0,
@@ -85,7 +134,6 @@ local   inGameShop  =   {
 	_list                       = Array.new(),
 	_listCount                  = 1,
 	
-	_startSlotIndex             = 0,
 	_currentTab                 = nil,
 	_currentClass               = nil,
 	_search                     = nil,
@@ -93,11 +141,16 @@ local   inGameShop  =   {
 	_currentSubFilter			= nil,
 
 	_openByEventAlarm           = false,
+	_currentPos					= 0,
+	_position					= 0,
+	_maxDescSize				= 200,
 }
 inGameShop._scrollBTN_IngameCash    = UI.getChildControl( inGameShop._scroll_IngameCash,    "Scroll_CtrlButton")
 inGameShop._combo_ClassList         = UI.getChildControl( inGameShop._combo_Class,          "Combobox_List")
 inGameShop._combo_SubFilterList     = UI.getChildControl( inGameShop._combo_SubFilter,      "Combobox_List")
 inGameShop._combo_SortList          = UI.getChildControl( inGameShop._combo_Sort,           "Combobox_List")
+inGameShop._goodDescBG				= UI.getChildControl( inGameShop._static_ScrollArea,    "Static_GoodsDescBG")
+
 
 
 local tabId = {
@@ -225,8 +278,17 @@ local isNaver			= ( CppEnums.MembershipType.naver == getMembershipType() )
 local nilIconPath			= "New_Icon/03_ETC/item_unknown.dds"
 local nilProductIconPath	= "New_Icon/09_Cash/03_Product/00021034.dds"
 
-local tag_changeTexture = function( idx, tagType )
-	local control = inGameShop._slots[idx].tag
+local disCountSetUse = false	-- 미국이면 true 그외 국가면 false
+function InGameShop_GameTypeCheck()
+	if isGameTypeEnglish() then
+		disCountSetUse = true
+	else
+		disCountSetUse = false
+	end
+end
+
+local tag_changeTexture = function( slot, tagType )
+	local control = slot.tag
 	control:ChangeTextureInfoName( "new_ui_common_forlua/window/ingamecashshop/CashShop_03.dds" )
 	local x1, y1, x2, y2 = setTextureUV_Func( control, tagTexture[tagType][1], tagTexture[tagType][2], tagTexture[tagType][3], tagTexture[tagType][4] )
 	control:getBaseTexture():setUV( x1, y1, x2, y2 )
@@ -310,23 +372,24 @@ function    inGameShop:init()
 			tab.static  = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "RadioButton_CategoryTab_HotAndNew",	Panel_IngameCashShop,   "InGameShop_Tab_"                   .. ii )
 			tab.text	= UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "StaticText_CategoryHotAndNew",		tab.static,				"InGameShop_Text_"                  .. ii )
 		else
-			tab.static  = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "RadioButton_CategoryTab",				Panel_IngameCashShop,   "InGameShop_Tab_"                   .. ii )
+			tab.static	= UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "RadioButton_CategoryTab",				Panel_IngameCashShop,   "InGameShop_Tab_"                   .. ii )
 			tab.text	= UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "StaticText_Category",					tab.static,				"InGameShop_Text_"                  .. ii )
 		end
+
+		tab.text:SetTextMode( UI_TM.eTextMode_AutoWrap )
+		tab.static:SetText( "" )
 		tab.icon    = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, tostring("Static_ButtonIcon_" .. ii),  tab.static,             "InGameShop_Tab_Icon_"              .. ii )
 		_ingameCash_SetTabIconTexture( tab.icon, ii, 0 )    -- 컨트롤, 탭아이콘넘버, 상태
 		
 		-- 리사이즈 문제로 위치는 업데이트에서 한다.(2015.06.19 김창욱)
-		
-		tab.text:SetTextMode( UI_TM.eTextMode_AutoWrap )
 		tab.text:SetText( PAGetString(Defines.StringSheet_GAME, tostring("LUA_INGAMESHOP_TAB_" .. ii) ) )
-		tab.static:SetText( "" )
 		tab.static:addInputEvent(   "Mouse_LUp",    "InGameShop_TabEvent(" .. ii .. ")" )
 		tab.static:addInputEvent(   "Mouse_On",     "_inGameShop_TabOnOut_ChangeTexture( true, " .. ii .. ")" )
 		tab.static:addInputEvent(   "Mouse_Out",    "_inGameShop_TabOnOut_ChangeTexture( false, " .. ii .. ")" )
 		tab.static:SetShow(true)
 
 		-- 강제 : 노출 탭 버튼 수정.
+		-- if tabId.dye == ii or tabId.avatar2 == ii then
 		if tabId.dye == ii then
 			tab.static:SetShow(false)
 		end
@@ -351,7 +414,7 @@ function    inGameShop:init()
 		local   slot        = {}
 		
 		slot.productNoRaw   = nil
-		slot.static         = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_Static_GoodsBG",                 Panel_IngameCashShop,       "InGameShop_Slot_"                  .. ii )
+		slot.static         = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_Static_GoodsBG",                 self._static_ScrollArea,    "InGameShop_Slot_"                  .. ii )
 		slot.productIcon    = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_Static_ProductImage",            slot.static,                "InGameShop_Slot_ProductIcon_"      .. ii )
 		slot.tag            = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_Static_GoodsHighlightLine",      slot.static,                "InGameShop_Slot_Tag_"              .. ii )
 		slot.iconBG         = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_Static_SlotBG",                  slot.static,                "InGameShop_Slot_IconBG_"           .. ii )
@@ -359,7 +422,7 @@ function    inGameShop:init()
 		slot.name           = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_StaticText_ItemName",            slot.static,                "InGameShop_Slot_Name_"             .. ii )
 		slot.discount       = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_StaticText_DiscountPeriod",      slot.static,                "InGameShop_Slot_DiscountPeriod_"   .. ii )
 		slot.pearlIcon      = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_Static_PearlIcon",               slot.static,                "InGameShop_Slot_PearlIcon_"        .. ii )
-		slot.originalPrice  = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_StaticText_ItemOriginalPrice",   slot.pearlIcon,             "InGameShop_Slot_OriginalPrice_"            .. ii )
+		slot.originalPrice  = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_StaticText_ItemOriginalPrice",   slot.pearlIcon,             "InGameShop_Slot_OriginalPrice_"    .. ii )
 		slot.price          = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_StaticText_ItemPrice",           slot.pearlIcon,             "InGameShop_Slot_Price_"            .. ii )
 		slot.buttonBuy      = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_Button_Buy",                     slot.static,                "InGameShop_Slot_Buy_"              .. ii )
 		slot.buttonGift     = UI.createAndCopyBasePropertyControl( Panel_IngameCashShop, "TemplateList_Button_Gift",                    slot.static,                "InGameShop_Slot_Gift_"             .. ii )
@@ -367,8 +430,8 @@ function    inGameShop:init()
 		
 		-- 좌표 설정.
 		--{
-			slot.static     :SetPosX( slotConfig._startX )
-			slot.static     :SetPosY( slotConfig._startY + slotConfig._gapY * ii )
+			slot.static     :SetPosX( 0 )
+			slot.static     :SetPosY( slotConfig._gapY * ii )
 		--}
 		slot.discount       :SetTextMode( UI_TM.eTextMode_Limit_AutoWrap )
 		slot.name           :SetTextMode( UI_TM.eTextMode_Limit_AutoWrap )
@@ -413,18 +476,18 @@ function    inGameShop:init()
 		self._static_GradationTop:SetPosY( slotConfig._startY )
 		
 		self._static_GradationBottom:SetPosX( slotConfig._startX )
-		self._static_GradationBottom:SetPosY( slotConfig._startY + slotConfig._gapY * (maxSlotCount -1) )
+		self._static_GradationBottom:SetPosY( self._static_ScrollArea:GetSizeY() + self._static_ScrollArea:GetPosY() - self._static_GradationBottom:GetSizeY() )
 
-		Panel_IngameCashShop:SetChildIndex(self._static_GradationTop, 9999 ) 
-		Panel_IngameCashShop:SetChildIndex(self._static_GradationBottom, 9999 ) 
+		Panel_IngameCashShop:SetChildIndex(self._static_GradationTop, 9999 )
+		Panel_IngameCashShop:SetChildIndex(self._static_GradationBottom, 9999 )
 	--}
 
 	FGlobal_Init_IngameCashShop_NewCart( slotConfig._gapY )
 
 	-- 콤보 박스를 위로
-	Panel_IngameCashShop:SetChildIndex(self._combo_Class, 9999 ) 
-	Panel_IngameCashShop:SetChildIndex(self._combo_Sort, 9999 ) 
-	Panel_IngameCashShop:SetChildIndex(self._combo_SubFilter, 9999 ) 
+	Panel_IngameCashShop:SetChildIndex(self._combo_Class, 9999 )
+	Panel_IngameCashShop:SetChildIndex(self._combo_Sort, 9999 )
+	Panel_IngameCashShop:SetChildIndex(self._combo_SubFilter, 9999 )
 
 	local scrSizeY      = getScreenSizeY()
 	
@@ -531,7 +594,196 @@ function    inGameShop:updateMoney()
 		self._staticText_MileageCount:SetText( makeDotMoney(mileage) )
 		self._staticText_SilverCount:SetText( makeDotMoney(money) )
 	--}
-	return cash, pearl, mileage
+	return cash, pearl, mileage, money
+end
+
+function inGameShop:getMaxPosition()
+	if ( -1 ~= self._openProductKeyRaw ) and ( nil ~= self._openProductKeyRaw ) then
+		return ( self._listCount - 2 ) * self._config._slot._gapY + self._slots[0].static:GetSizeY() - self._static_ScrollArea:GetSizeY() + self._goodDescBG:GetSizeY()
+	else
+		return ( self._listCount - 2 ) * self._config._slot._gapY + self._slots[0].static:GetSizeY() - self._static_ScrollArea:GetSizeY()
+	end
+	
+end
+
+function inGameShop:isSelectProductGroup(productNoRaw)
+	if ( self._openProductKeyRaw == productNoRaw ) then
+		return true
+	end
+	for key, value in pairs(self._comboList) do
+		if ( value == productNoRaw ) then
+			return true
+		end
+	end
+	return false
+end
+
+function inGameShop:setElement(index, productNoRaw, slot)
+	local   maxSlotCount= self._slotCount
+	
+	local   cashProduct = getIngameCashMall():getCashProductStaticStatusByProductNoRaw(productNoRaw)
+	if  ( nil == cashProduct )  then
+		return false
+	end
+
+	-- 배경을 바꿔야 한다.
+	if self:isSelectProductGroup(productNoRaw) then
+		InGameShop_ProductListContent_ChangeTexture( slot, true )
+	else
+		InGameShop_ProductListContent_ChangeTexture( slot, false )
+	end
+	slot.productNoRaw       = productNoRaw
+	if nil == cashProduct:getPackageIcon() then
+		slot.productIcon    :ChangeTextureInfoName( nilProductIconPath )
+	else
+		slot.productIcon    :ChangeTextureInfoName( cashProduct:getPackageIcon() )
+	end
+	
+	tag_changeTexture( slot, cashProduct:getTag() )    -- 태그 이미지 적용.
+
+	if nil == cashProduct:getIconPath() then
+		slot.icon           :ChangeTextureInfoName( "Icon/" .. nilIconPath )
+	else
+		slot.icon           :ChangeTextureInfoName( "Icon/" .. cashProduct:getIconPath() )
+	end
+	slot.icon           :addInputEvent("Mouse_On",  "InGameShop_ProductShowToolTip( " .. slot.productNoRaw .. ", " .. index .. " )")
+	slot.icon           :addInputEvent("Mouse_Out", "FGlobal_CashShop_GoodsTooltipInfo_Close()")
+
+	slot.name           :SetText( cashProduct:getDisplayName() )
+	slot.price          :SetText( makeDotMoney(cashProduct:getPrice()) )
+	slot.originalPrice  :SetShow( false )
+					
+	-- 할인기간중이면 할인기간을 표시, 아니면 기본 정보를 표시한다.
+	slot.discount:SetText( cashProduct:getDescription() )
+
+	if  ( cashProduct:isApplyDiscount() )   then
+		local   startDiscountTimeValue  = PATime( cashProduct:getStartDiscountTime():get_s64() )
+		local   endDiscountTimeValue    = PATime( cashProduct:getEndDiscountTime():get_s64() )
+		local   startDiscountTime       = tostring( startDiscountTimeValue:GetYear() )  .. "." .. tostring( startDiscountTimeValue:GetMonth() ) .. "." .. tostring( startDiscountTimeValue:GetDay() )
+		local   endDiscountTime         = PAGetStringParam3( Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_DISCOUNTTIME", "GetYear", tostring( endDiscountTimeValue:GetYear() ), "GetMonth", tostring( endDiscountTimeValue:GetMonth() ), "GetDay", tostring( endDiscountTimeValue:GetDay() )) .. " " .. string.format( "%.02d", endDiscountTimeValue:GetHour() ) .. ":" .. string.format( "%.02d", endDiscountTimeValue:GetMinute() )
+		local countryKind = PAGetStringParam3( Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_DISCOUNTTIME", "GetYear", tostring( endDiscountTimeValue:GetYear() ), "GetMonth", tostring( endDiscountTimeValue:GetMonth() ), "GetDay", tostring( endDiscountTimeValue:GetDay() )) .. " " .. string.format( "%.02d", endDiscountTimeValue:GetHour() ) .. ":" .. string.format( "%.02d", endDiscountTimeValue:GetMinute() )
+		local remainTime = convertStringFromDatetime(cashProduct:getRemainDiscountTime())
+		if (true == disCountSetUse) then
+			countryKind = remainTime
+		else
+			countryKind = endDiscountTime
+		end
+		-- local remainTime = convertStringFromDatetime(cashProduct:getRemainDiscountTime())
+
+		slot.discount:SetText( PAGetStringParam1(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_DISCOUNT", "endDiscountTime", countryKind) )-- "<PAColor0xfface400>할인 기간 : " .. endDiscountTime .. "까지<PAOldColor>" 
+		slot.originalPrice  :SetText( makeDotMoney(cashProduct:getOriginalPrice()) .. " <PAColor0xffefefef>→<PAOldColor> " )
+		slot.originalPrice  :SetShow( true )
+	end
+
+	-- 펄 아이콘을 바꾼다.
+	InGameShop_ProductListContent_ChangeMoneyIconTexture( slot, cashProduct:getCategory(), cashProduct:isMoneyPrice() )
+	local limitType = cashProduct:getCashPurchaseLimitType()
+	if UI_CCC.eCashProductCategory_Pearl == cashProduct:getCategory() or UI_CCC.eCashProductCategory_Mileage == cashProduct:getCategory() then
+		slot.buttonBuy  :SetMonoTone( false )
+		slot.buttonGift :SetMonoTone( true )
+		slot.buttonCart :SetMonoTone( true )
+						
+		slot.buttonBuy  :SetEnable( true )
+		slot.buttonGift :SetEnable( false )
+		slot.buttonCart :SetEnable( false )
+	else
+		if UI_PLT.None ~= limitType then
+			local limitCount    = cashProduct:getCashPurchaseCount()
+			local mylimitCount  = getIngameCashMall():getRemainingLimitCount( cashProduct:getNoRaw() )
+			if 0 < limitCount then
+				slot.buttonBuy  :SetMonoTone( false )
+				slot.buttonGift :SetMonoTone( true )
+				slot.buttonCart :SetMonoTone( false )
+								
+				slot.buttonBuy  :SetEnable( true )
+				slot.buttonGift :SetEnable( false )
+				slot.buttonCart :SetEnable( true )
+
+				if mylimitCount <= 0 then
+					slot.buttonBuy  :SetMonoTone( true )
+					slot.buttonCart :SetMonoTone( true )
+
+					slot.buttonBuy  :SetEnable( false )
+					slot.buttonCart :SetEnable( false )
+				end
+			else
+				slot.buttonBuy  :SetMonoTone( true )
+				slot.buttonGift :SetMonoTone( true )
+				slot.buttonCart :SetMonoTone( true )
+								
+				slot.buttonBuy  :SetEnable( false )
+				slot.buttonGift :SetEnable( false )
+				slot.buttonCart :SetEnable( false )
+			end
+		else
+			slot.buttonBuy:SetMonoTone( false )
+			slot.buttonGift:SetMonoTone( false )
+			slot.buttonCart:SetMonoTone( false )
+
+			slot.buttonBuy:SetEnable( true )
+			slot.buttonGift:SetEnable( true )
+			slot.buttonCart:SetEnable( true )
+		end
+	end
+					
+	slot.static:SetShow(true)
+	if self._currentPos <= 0 then   -- 0이면 위화살표 노출 안함.
+		self._static_GradationTop:SetShow( false )
+	else
+		self._static_GradationTop:SetShow( true )
+	end
+
+	if (self:getMaxPosition()) <= (self._currentPos) then  -- 마지막까지 나오면 아래화살표 노출 안함.
+		self._static_GradationBottom:SetShow( false )
+	else
+		self._static_GradationBottom:SetShow( true )
+	end
+	return true
+end
+
+function inGameShop:updateSlot()
+	local   maxSlotCount	= self._slotCount
+	local   index			= 0
+	local	pos				= 0
+	local	areaSizeY		= self._static_ScrollArea:GetSizeY()
+	local	slotSize		= self._slots[0].static:GetSizeY()
+	local	gapBetweenList  = self._config._slot._gapY
+	local	gap  = self._config._slot._gapY - slotSize
+
+	for ii = 0, self._listCount - 1 do
+		local   productNoRaw= self._list[ii+1]
+		local   slot		= self._slots[index]
+		if ( nil == slot ) then
+			return
+		end
+
+		slot.static:SetShow(false)
+		if ( self._currentPos + areaSizeY < pos ) then
+			
+		elseif ( self._currentPos < pos + slotSize ) then
+			if ( self:setElement(index, productNoRaw, slot) ) then
+				slot.static:SetPosY( pos - self._currentPos )
+				index   = index + 1
+			end
+		end
+
+		
+		if ( self:isSelectProductGroup(productNoRaw) ) then
+			self._goodDescBG:SetShow(false)
+			if ( self._goodDescBG:GetSizeY() < self._maxDescSize ) and ( self._position + areaSizeY < pos + slot.static:GetSizeY() + self._goodDescBG:GetSizeY() ) then
+				self._position = pos + slot.static:GetSizeY() + self._goodDescBG:GetSizeY() - areaSizeY
+				self._scroll_IngameCash:SetControlPos(self._position / self:getMaxPosition())
+			end
+			if ( self._currentPos < pos + slot.static:GetSizeY() + self._goodDescBG:GetSizeY() ) and ( pos + slot.static:GetSizeY() < self._currentPos + areaSizeY ) then
+				self._goodDescBG:SetPosY( pos - self._currentPos + slot.static:GetSizeY() )
+				self._goodDescBG:SetShow(true)
+			end
+
+			pos = pos + self._goodDescBG:GetSizeY()
+		end
+
+		pos = pos + gapBetweenList
+	end
 end
 
 function    inGameShop:update()
@@ -539,8 +791,6 @@ function    inGameShop:update()
 		FGlobal_Close_IngameCashShop_NewCart()
 	end
 
-	local   maxSlotCount= self._slotCount
-	
 	--{
 		self:updateMoney()
 	--}
@@ -554,12 +804,29 @@ function    inGameShop:update()
 					tab.static:SetPosX( tabConfig._startX )
 					tab.static:SetPosY( tabConfig._startY )
 				else
-					if tabId.avatar2 == ii then
-						tab.static:SetPosX( tabConfig._startX )
-						tab.static:SetPosY( tabConfig._startY + ( tabConfig._gapY * (tabId.avatar+1)) + tabConfig._gapY )
+					if isGameTypeEnglish() then
+						if tabId.avatar2 == ii then
+							tab.static:SetPosX( tabConfig._startX )
+							tab.static:SetPosY( tabConfig._startY + ( tabConfig._gapY * (tabId.avatar+1)) + tabConfig._gapY )
+						elseif tabId.furniture == ii then
+							tab.static:SetPosX( tabConfig._startX )
+							tab.static:SetPosY( tabConfig._startY + ( tabConfig._gapY * (tabId.avatar+2)) + tabConfig._gapY )
+						elseif tabId.vehicle == ii then
+							tab.static:SetPosX( tabConfig._startX )
+							tab.static:SetPosY( tabConfig._startY + ( tabConfig._gapY * (tabId.avatar+3)) + tabConfig._gapY )
+						elseif tabId.pet == ii then
+							tab.static:SetPosX( tabConfig._startX )
+							tab.static:SetPosY( tabConfig._startY + ( tabConfig._gapY * (tabId.avatar+4)) + tabConfig._gapY )
+						elseif tabId.customization == ii then
+							tab.static:SetPosX( tabConfig._startX )
+							tab.static:SetPosY( tabConfig._startY + ( tabConfig._gapY * (tabId.avatar+5)) + tabConfig._gapY )
+						else
+							tab.static:SetPosX( tabConfig._startX )
+							tab.static:SetPosY( tabConfig._startY + ( tabConfig._gapY * (ii)) + tabConfig._gapY )
+						end
 					else
 						tab.static:SetPosX( tabConfig._startX )
-						tab.static:SetPosY( tabConfig._startY + ( tabConfig._gapY * (ii + 1)) + tabConfig._gapY )	
+						tab.static:SetPosY( tabConfig._startY + ( tabConfig._gapY * (ii)) + tabConfig._gapY )
 					end
 				end
 			else
@@ -583,127 +850,12 @@ function    inGameShop:update()
 	--}
 
 	--{ 실제 처리.
-		local   index   = 0
-		for ii = 0, self._listCount - 1 do
-			if  ( self._startSlotIndex <= ii )  then
-				local   productNoRaw= self._list[ii+1]
-				local   cashProduct = getIngameCashMall():getCashProductStaticStatusByProductNoRaw(productNoRaw)
-				if  ( nil ~= cashProduct )  then
-					local   slot    = self._slots[index]
-					-- 배경을 바꿔야 한다.
-					if self._openProductKeyRaw == productNoRaw then
-						InGameShop_ProductListContent_ChangeTexture( index, true )
-					else
-						InGameShop_ProductListContent_ChangeTexture( index, false )
-					end
-					slot.productNoRaw       = productNoRaw
-					if nil == cashProduct:getPackageIcon() then
-						slot.productIcon    :ChangeTextureInfoName( nilProductIconPath )
-					else
-						slot.productIcon    :ChangeTextureInfoName( cashProduct:getPackageIcon() )
-					end
-	
-					tag_changeTexture( index, cashProduct:getTag() )    -- 태그 이미지 적용.
-
-					if nil == cashProduct:getIconPath() then
-						slot.icon           :ChangeTextureInfoName( "Icon/" .. nilIconPath )
-					else
-						slot.icon           :ChangeTextureInfoName( "Icon/" .. cashProduct:getIconPath() )
-					end
-					slot.icon           :addInputEvent("Mouse_On",  "InGameShop_ProductShowToolTip( " .. slot.productNoRaw .. ", " .. index .. " )")
-					slot.icon           :addInputEvent("Mouse_Out", "FGlobal_CashShop_GoodsTooltipInfo_Close()")
-
-					slot.name           :SetText( cashProduct:getDisplayName() )
-					slot.price          :SetText( makeDotMoney(cashProduct:getPrice()) )
-					slot.originalPrice  :SetShow( false )
-					
-					-- 할인기간중이면 할인기간을 표시, 아니면 기본 정보를 표시한다.
-					slot.discount:SetText( cashProduct:getDescription() )
-					
-					if  ( cashProduct:isApplyDiscount() )   then
-						local   remainTime = convertStringFromDatetime(cashProduct:getRemainDiscountTime())
-						-- local   remainTime = "Modify me"
-						
-						slot.discount:SetText( PAGetStringParam1(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_DISCOUNT", "endDiscountTime", remainTime) )
-						slot.originalPrice  :SetText( makeDotMoney(cashProduct:getOriginalPrice()) .. " <PAColor0xffefefef>→<PAOldColor> " )
-						slot.originalPrice  :SetShow( true )
-					end
-
-					-- 펄 아이콘을 바꾼다.
-					InGameShop_ProductListContent_ChangeMoneyIconTexture( index, cashProduct:getCategory(), cashProduct:isMoneyPrice() )
-					local limitType = cashProduct:getCashPurchaseLimitType()
-					if UI_CCC.eCashProductCategory_Pearl == cashProduct:getCategory() or UI_CCC.eCashProductCategory_Mileage == cashProduct:getCategory() then
-						slot.buttonBuy  :SetMonoTone( false )
-						slot.buttonGift :SetMonoTone( true )
-						slot.buttonCart :SetMonoTone( true )
-						
-						slot.buttonBuy  :SetEnable( true )
-						slot.buttonGift :SetEnable( false )
-						slot.buttonCart :SetEnable( false )
-					else
-						if UI_PLT.None ~= limitType then
-							local limitCount    = cashProduct:getCashPurchaseCount()
-							local mylimitCount  = getIngameCashMall():getRemainingLimitCount( cashProduct:getNoRaw() )
-							if 0 < limitCount then
-								slot.buttonBuy  :SetMonoTone( false )
-								slot.buttonGift :SetMonoTone( true )
-								slot.buttonCart :SetMonoTone( false )
-								
-								slot.buttonBuy  :SetEnable( true )
-								slot.buttonGift :SetEnable( false )
-								slot.buttonCart :SetEnable( true )
-
-								if mylimitCount <= 0 then
-									slot.buttonBuy  :SetMonoTone( true )
-									slot.buttonCart :SetMonoTone( true )
-
-									slot.buttonBuy  :SetEnable( false )
-									slot.buttonCart :SetEnable( false )
-								end
-							else
-								slot.buttonBuy  :SetMonoTone( true )
-								slot.buttonGift :SetMonoTone( true )
-								slot.buttonCart :SetMonoTone( true )
-								
-								slot.buttonBuy  :SetEnable( false )
-								slot.buttonGift :SetEnable( false )
-								slot.buttonCart :SetEnable( false )
-							end
-						else
-							slot.buttonBuy:SetMonoTone( false )
-							slot.buttonGift:SetMonoTone( false )
-							slot.buttonCart:SetMonoTone( false )
-
-							slot.buttonBuy:SetEnable( true )
-							slot.buttonGift:SetEnable( true )
-							slot.buttonCart:SetEnable( true )
-						end
-					end
-					
-					slot.static:SetShow(true)
-					if 0 == self._startSlotIndex then   -- 0이면 위화살표 노출 안함.
-						self._static_GradationTop:SetShow( false )
-					else
-						self._static_GradationTop:SetShow( true )
-					end
-					if (self._listCount - 1) <= (self._startSlotIndex + maxSlotCount) + 1 then  -- 마지막까지 나오면 아래화살표 노출 안함.
-						self._static_GradationBottom:SetShow( false )
-					else
-						self._static_GradationBottom:SetShow( true )
-					end
-					
-					index   = index + 1
-					if  (maxSlotCount - 1 < index)  then
-						return
-					end
-				end
-			end
-		end
+		self:updateSlot()
 	--}
 end
 
 function    inGameShop:registMessageHandler()
-	Panel_IngameCashShop:RegisterUpdateFunc("InGameShop_DisCountPerFrame")
+	Panel_IngameCashShop:RegisterUpdateFunc("InGameCashshopUpdatePerFrame")
 
 	self._static_ScrollArea             :addInputEvent( "Mouse_UpScroll",   "InGameShop_ScrollEvent( true  )"   )
 	self._static_ScrollArea             :addInputEvent( "Mouse_DownScroll", "InGameShop_ScrollEvent( false )"   )
@@ -721,7 +873,11 @@ function    inGameShop:registMessageHandler()
 	self._combo_Class:GetListControl()  	:addInputEvent( "Mouse_LUp",        "InGameShop_SelectClass()"  )
 	self._combo_Sort:GetListControl()   	:addInputEvent( "Mouse_LUp",        "InGameShop_SelectSort()"   )
 	self._combo_SubFilter:GetListControl()  :addInputEvent( "Mouse_LUp",        "InGameShop_SelectSubFilter()"   )
-	
+
+	inGameShop.desc._static_ItemNameCombo					:addInputEvent(	"Mouse_LUp",	"HandleClicked_IngameCashShop_ShowSubList()"	)
+	inGameShop.desc._static_ItemNameCombo:GetListControl()	:addInputEvent( "Mouse_LUp",	"HandleClicked_IngameCashShop_SelectedSubList()"	)
+	inGameShop._goodDescBG:addInputEvent( "Mouse_UpScroll",   "InGameShop_ScrollEvent( true )" )
+	inGameShop._goodDescBG:addInputEvent( "Mouse_DownScroll", "InGameShop_ScrollEvent( false )" )
 
 	self._promotionTab.static           :addInputEvent("Mouse_LUp",         "InGameShop_Promotion_Open()")
 	self._promotionTab.static           :addInputEvent("Mouse_On",          "InGameShop_ShowSimpleToolTip( true, " .. 0 .. " )")
@@ -878,8 +1034,12 @@ end
 ----------------------------------------------------------------------------------------------------
 -- Function
 function    InGameShop_TabEvent( tab )
-	local   self    = inGameShop
+	if nil == tab then
+		return
+	end
 
+	local   self    = inGameShop
+	FGlobal_IngameCashShop_SelectedItemReset()
 	if self._tabs[tab] then -- 클릭한 탭을 맨 위로 올린다.
 		Panel_IngameCashShop:SetChildIndex(self._tabs[tab].static, 9999 )
 	end
@@ -898,7 +1058,9 @@ function    InGameShop_TabEvent( tab )
 	end
 
 	-- 카테고리를 누르면 다른 필터링 초기화.
-	self._startSlotIndex= 0
+	self._currentPos	= 0
+	self._position		= 0
+	self._scroll_IngameCash:SetControlPos(0)
 	self._search        = nil
 	self._currentClass  = nil
 	self._currentSort   = nil
@@ -958,6 +1120,9 @@ function InGameShop_SetScroll()
 	if scrollSizeY <= btn_scrollSizeY then
 		btn_scrollSizeY = scrollSizeY * 0.99
 	end
+	if btn_scrollSizeY < 20 then
+		btn_scrollSizeY = 50
+	end
 
 	if not self._openFunction then  -- 프로모션 페이지에서는 스크롤을 꺼야 한다.
 		if self._slotCount < (self._listCount - 1) then
@@ -991,7 +1156,9 @@ function InGameShop_BuyPearl()
 	self._currentTab    = 0
 	
 	-- 카테고리를 누르면 다른 필터링 초기화.
-	self._startSlotIndex= 0
+	self._currentPos	= 0
+	self._position		= 0
+	self._scroll_IngameCash:SetControlPos(0)
 	self._search        = nil
 	self._currentClass  = nil
 	self._currentSort   = nil
@@ -1045,9 +1212,11 @@ function    InGameShop_Search()
 	
 	self._edit_Search:SetEditText( search, true )
 	ClearFocusEdit()        -- 포커스는 풀어준다.
-	self._startSlotIndex= 0
+	self._currentPos	= 0
+	self._position		= 0
 	self._search        = search
 	
+	FGlobal_IngameCashShop_SelectedItemReset()
 	self:initData()
 	self:update()
 end
@@ -1097,22 +1266,23 @@ function    InGameShop_ScrollEvent( isUp )
 	local   maxCount    = self._listCount - 1
 	
 	if  (isUp)  then
-		if  (self._startSlotIndex <= 0) then
-			return
+		self._position = self._position - self._config._slot._gapY
+		if ( self._position < 0 ) then
+			self._position = 0
 		end
-		self._startSlotIndex    = self._startSlotIndex - 1
-		self._scroll_IngameCash:ControlButtonUp()
 	else
-		if  ( maxCount <= (self._startSlotIndex + self._slotCount) )    then
+		local listSize = self:getMaxPosition()
+		if ( listSize < 0 ) then
 			return
 		end
-	
-		if  (maxCount <= self._startSlotIndex)  then
-			return
+
+		self._position = self._position + self._config._slot._gapY
+		if ( listSize < self._position ) then
+			self._position = listSize
 		end
-		self._startSlotIndex    = self._startSlotIndex + 1
-		self._scroll_IngameCash:ControlButtonDown()
 	end
+
+	self._scroll_IngameCash:SetControlPos(self._position / self:getMaxPosition())
 	self:update()
 end
 
@@ -1181,9 +1351,7 @@ function InGameShop_Promotion_Close()
 	self._openFunction = false
 end
 
-function InGameShop_ProductListContent_ChangeTexture( index, isSelected )
-	local self  = inGameShop
-	local slot  = self._slots[index]
+function InGameShop_ProductListContent_ChangeTexture( slot, isSelected )
 	slot.static:ChangeTextureInfoName( "new_ui_common_forlua/window/ingamecashshop/cashshop_01.dds" )
 	local x1, y1, x2, y2 = 0, 0, 0, 0
 
@@ -1196,10 +1364,7 @@ function InGameShop_ProductListContent_ChangeTexture( index, isSelected )
 	slot.static:setRenderTexture(slot.static:getBaseTexture())
 end
 
-function InGameShop_ProductListContent_ChangeMoneyIconTexture( index, categoryIdx, isEnableSilver )
-	local self  = inGameShop
-	local slot  = self._slots[index]
-
+function InGameShop_ProductListContent_ChangeMoneyIconTexture( slot, categoryIdx, isEnableSilver )
 	local serviceContry = nil
 	local iconType		= nil
 	-- 국가에 따라, 캐시 아이콘을 달리 한다.
@@ -1237,10 +1402,8 @@ function InGameShop_ProductListContent_ChangeMoneyIconTexture( index, categoryId
 end
 
 function HandleClicked_InGameShop_SetScrollIndexByLClick()
-	local self              = inGameShop
-	local posByIndex        = 1 / ( (self._listCount - 2) - (self._slotCount - 1) )
-	local currentIndex      = math.floor(self._scroll_IngameCash:GetControlPos() / posByIndex)
-	self._startSlotIndex    = currentIndex
+	local self      = inGameShop
+	self._position	= self._scroll_IngameCash:GetControlPos() * self:getMaxPosition()
 	self:update()
 end
 
@@ -1373,12 +1536,16 @@ function FGlobal_InGameShop_OpenByEventAlarm()
 	local scrSizeY      = getScreenSizeY()
 	local categoryUrl   = ""
 	local promotionUrl  = ""
-	promotionUrl    = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_PROMOTIONURL")
-	categoryUrl     = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_CATEGORYURL")
-	
-	
+	if isServerFixedCharge() then		-- 러시아 P2P(정액제)
+		promotionUrl    = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_PROMOTIONURL_P2P")
+		categoryUrl     = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_CATEGORYURL_P2P")
+	else
+		promotionUrl    = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_PROMOTIONURL")
+		categoryUrl     = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_CATEGORYURL")
+	end
+
 	FGlobal_SetCandidate()
-	
+
 	self._categoryWeb:SetUrl( self._categoryWeb:GetSizeX(), self._categoryWeb:GetSizeY(), categoryUrl)
 	self._categoryWeb:SetShow( true )
 	self._categoryWeb:SetIME()
@@ -1425,23 +1592,482 @@ end
 
 ----------------------------------------------------------------------------------------------------
 -- Cash Function
+function	IngameCashShop_Descinit()
+	local self = inGameShop.desc
+
+	-- 그룹 상품 관련
+	self._static_ItemNameCombo		= UI.getChildControl( inGameShop._goodDescBG, "Combobox_ItemNameByGroup"	)
+
+	-- 상품 기본 정보
+	self._staticText_Title			= UI.getChildControl( inGameShop._goodDescBG, "StaticText_GoodsTitle"		)
+	self._static_SlotBG				= UI.getChildControl( inGameShop._goodDescBG, "Static_GoodsSlotBG"			)
+	self._static_Slot				= UI.getChildControl( inGameShop._goodDescBG, "Static_GoodsSlot"			)
+	self._static_Desc				= UI.getChildControl( inGameShop._goodDescBG, "StaticText_GoodsDesc"		)
+	-- 상품 추가 정보
+	self._staticText_PurchaseLimit	= UI.getChildControl( inGameShop._goodDescBG, "StaticText_PurchaseLimit"	)
+	self._static_VestedDesc			= UI.getChildControl( inGameShop._goodDescBG, "StaticText_VestedDesc"		)
+	self._static_TradeDesc			= UI.getChildControl( inGameShop._goodDescBG, "StaticText_TradeDesc"		)
+	self._static_ClassDesc			= UI.getChildControl( inGameShop._goodDescBG, "StaticText_ClassDesc"		)
+	self._static_WarningDesc		= UI.getChildControl( inGameShop._goodDescBG, "StaticText_WarningDesc"		)
+	self._static_DiscountPeriodDesc	= UI.getChildControl( inGameShop._goodDescBG, "StaticText_DiscountPeriod"	)
+	self._static_ItemListTitle		= UI.getChildControl( inGameShop._goodDescBG, "StaticText_ItemListTitle"	)
+	self._static_RelatedItemTitle	= UI.getChildControl( inGameShop._goodDescBG, "StaticText_RelatedItemTitle"	)
+
+	self._staticText_Title				:SetAutoResize( true )
+	self._static_Desc					:SetAutoResize( true )
+	
+	self._staticText_Title				:SetTextMode( UI_TM.eTextMode_AutoWrap )
+	self._static_Desc					:SetTextMode( UI_TM.eTextMode_AutoWrap )
+
+	self._static_Desc					:SetFontColor( UI_color.C_FFC4A68A )
+	self._staticText_PurchaseLimit		:SetFontColor( UI_color.C_FF748CAB )
+	self._static_VestedDesc				:SetFontColor( UI_color.C_FF748CAB )
+	self._static_TradeDesc				:SetFontColor( UI_color.C_FFF26A6A )
+	self._static_ClassDesc				:SetFontColor( UI_color.C_FF999999 )
+	self._static_WarningDesc			:SetFontColor( UI_color.C_FFF26A6A )
+	self._static_DiscountPeriodDesc		:SetFontColor( UI_color.C_FF748CAB )
+	
+	-- 구성 아이템 목록
+	--{
+		local	itemConfig	= inGameShop._config._item
+		for	ii = 0, inGameShop._itemCount-1	do
+			local	slot		= {}
+			slot.iconBG	= UI.createAndCopyBasePropertyControl( inGameShop._goodDescBG, "Static_ItemSlotBG",	self._static_ItemListTitle,	"InGameShopDetailInfo_Item_"		.. ii )
+			slot.icon	= UI.createAndCopyBasePropertyControl( inGameShop._goodDescBG, "Static_ItemSlot",	slot.iconBG,				"InGameShopDetailInfo_Item_Icon_"	.. ii )
+			
+			-- 좌표 설정.
+			--{
+				slot.iconBG	:SetPosX( itemConfig._startX + itemConfig._gapX * ii )
+				slot.iconBG	:SetPosY( itemConfig._startY )
+			--}
+			
+			inGameShop._items[ii]	=	slot
+		end
+	--}
+
+
+	-- 관련 아이템 목록
+	--{
+		-- local	itemConfig	= inGameShop._config._relatedItem
+		-- for	ii = 0, inGameShop._itemCount-1	do
+		-- 	local	slot		= {}
+		-- 	slot.iconBG	= UI.createAndCopyBasePropertyControl( inGameShop._goodsDesc, "Static_RelatedItemSlotBG",	self._static_RelatedItemTitle,	"InGameShopDetailInfo_RelatedItem_"		.. ii )
+		-- 	slot.icon	= UI.createAndCopyBasePropertyControl( inGameShop._goodsDesc, "Static_RelatedItemSlot",		slot.iconBG,				"InGameShopDetailInfo_RelatedItem_Icon_"	.. ii )
+			
+		-- 	-- 좌표 설정.
+		-- 	--{
+		-- 		slot.iconBG	:SetPosX( itemConfig._startX + itemConfig._gapX * ii )
+		-- 		slot.iconBG	:SetPosY( itemConfig._startY )
+		-- 		slot.icon	:SetPosX( 0 )
+		-- 		slot.icon	:SetPosY( 0 )
+		-- 	--}
+			
+		-- 	inGameShop._relatedItems[ii]	=	slot
+		-- end
+	--}
+end
+
+function	IngameCashShop_DescUpdate()
+	local self = inGameShop.desc
+	local	cashProduct	= getIngameCashMall():getCashProductStaticStatusByProductNoRaw( inGameShop._openProductKeyRaw )
+	if	( nil == cashProduct )	then
+		return
+	end
+	
+	--초기화
+	--{
+		-- 구성 아이템
+		for	ii = 0, inGameShop._itemCount-1	do
+			local	slot	= inGameShop._items[ii]
+			slot.iconBG:SetShow(false)
+		end
+	--}
+
+	--{	구성 아이템
+		local	itemCount	= cashProduct:getItemListCount()
+		local	itemConfig	= inGameShop._config._relatedItem
+
+		if itemCount < 10 then
+			itemConfig._startX	= 0
+			itemConfig._gapX	= 35
+		else
+			itemConfig._startX	= -7
+			itemConfig._gapX	= 33
+		end
+		
+		for ii = 0, itemCount - 1 do
+			local	slot		= inGameShop._items[ii]
+			local	item		= cashProduct:getItemByIndex( ii )
+			local	itemCount	= cashProduct:getItemCountByIndex( ii )
+			local	itemGrade	= item:getGradeType()
+
+			slot.iconBG	:SetPosX( itemConfig._startX + itemConfig._gapX * ii )
+			slot.iconBG	:SetPosY( itemConfig._startY )
+			
+			slot.icon	:ChangeTextureInfoName( "icon/" .. item:getIconPath() )
+			slot.icon	:SetText( tostring(itemCount) )
+			slot.icon	:addInputEvent( "Mouse_On", "InGameShop_ShowItemToolTip( true, " .. ii .. " )" )
+			slot.icon	:addInputEvent( "Mouse_Out", "InGameShop_ShowItemToolTip( false, " .. ii .. " )" )
+			slot.iconBG	:SetShow(true)
+		end
+	--}
+
+	--{ 관련 아이템
+		-- local	relatedItemCount	= cashProduct:getCashRelatedCount()
+		-- if 0 < relatedItemCount then
+		-- 	for ii = 0, relatedItemCount - 1 do
+		-- 		local	slot		= inGameShop._relatedItems[ii]
+		-- 		local	item		= cashProduct:getCashRelatedItemByIndex( ii )
+		-- 		slot.icon	:ChangeTextureInfoName( "icon/" .. item:getIconPath() )
+		-- 		slot.iconBG	:SetShow(true)
+		-- 	end
+			self._static_RelatedItemTitle:SetShow( false )
+		-- end
+	--}
+
+	--{
+		local	descCount	= 0
+		local	descConfig	= inGameShop._config._desc
+		
+		self._static_VestedDesc			:SetShow( false )
+		self._static_TradeDesc			:SetShow( false )
+		self._static_ClassDesc			:SetShow( false )
+		self._static_WarningDesc		:SetShow( false )
+		self._static_DiscountPeriodDesc	:SetShow( false )
+		
+		self._static_Slot				:ChangeTextureInfoName( "Icon/" .. cashProduct:getIconPath() )
+
+		self._staticText_Title			:SetText( cashProduct:getName() )
+		self._static_Desc				:SetText( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_STATIC_DESC", "getDes", cashProduct:getDescription() ) )-- "- 상품 설명 : " .. cashProduct:getDescription() 
+		-- self._static_Price				:SetText( makeDotMoney(cashProduct:getPrice()) )
+
+		local list				= self._static_ItemNameCombo:GetListControl()
+		local _scroll			= list:GetScroll()
+		local listCount			= list:GetItemQuantity()
+		local listTotalCount	= list:GetItemSize()
+
+		if listCount <= listTotalCount then
+			_scroll:SetShow( true )
+		else
+			_scroll:SetShow( false )
+		end
+
+		-- 상품 카테고리에 따라 펄 아이콘을 변경.
+		InGameShop_ProductInfo_ChangeMoneyIconTexture( cashProduct:getCategory(), cashProduct:isMoneyPrice() )
+
+		local optionDesc_PosY = descConfig._startY + self._static_Desc:GetTextSizeY() + 35	-- desc 길이에 따른 대응
+
+		-- 구매 횟수 제한
+		self._staticText_PurchaseLimit	:SetShow( false )
+		local limitType		= cashProduct:getCashPurchaseLimitType()
+		if UI_PLT.None ~= limitType then
+			local limitCount	= cashProduct:getCashPurchaseCount()
+			local mylimitCount	= getIngameCashMall():getRemainingLimitCount( inGameShop._openProductKeyRaw )
+			local typeString = ""
+			if UI_PLT.AtCharacter == limitType then
+				typeString = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_CHARACTER") -- "캐릭터"
+			elseif UI_PLT.AtAccount == limitType then
+				typeString = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_FAMILY") -- "가문"
+			end
+			self._staticText_PurchaseLimit	:SetText( PAGetStringParam3( Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_PURCHASELIMIT", "typeString", typeString, "limitCount", limitCount, "mylimitCount", mylimitCount ) )-- "- 구입 제한 : " .. typeString .. " 당 " .. limitCount .. "개(" .. mylimitCount .."개 남음)" 
+			self._staticText_PurchaseLimit:SetFontColor( UI_color.C_FFF26A6A )	-- 붉은색
+			
+			self._staticText_PurchaseLimit	:SetShow( true )
+			self._staticText_PurchaseLimit	:SetPosY( optionDesc_PosY + descConfig._gapY * descCount )
+			descCount	= descCount + 1
+		end
+
+		local	vestedDesc	= IngameShopDetailInfo_ConvertFromCategoryToVestedDesc( cashProduct )
+		if(	nil ~= vestedDesc )	then
+			self._static_VestedDesc:SetText(vestedDesc)
+			self._static_VestedDesc:SetShow(true)
+			
+			self._static_VestedDesc:SetPosY( optionDesc_PosY + descConfig._gapY * descCount)
+			descCount	= descCount + 1
+		end
+		
+		local	tradeDesc	= IngameShopDetailInfo_ConvertFromCategoryToTradeDesc( cashProduct )
+		if(	nil ~= tradeDesc )	then
+			self._static_TradeDesc	:SetText(tradeDesc)
+			self._static_TradeDesc	:SetShow(true)
+			self._static_TradeDesc	:SetPosY( optionDesc_PosY + descConfig._gapY * descCount)
+			descCount	= descCount + 1
+		end
+	
+		local	classDesc	= IngameShopDetailInfo_ConvertFromCategoryToClassDesc( cashProduct )
+		if(	nil ~= classDesc )	then
+			self._static_ClassDesc	:SetText(classDesc)
+			self._static_ClassDesc	:SetShow(true)
+			self._static_ClassDesc	:SetPosY( optionDesc_PosY + descConfig._gapY * descCount)
+			descCount	= descCount + 1
+		end
+		
+		-- 세일기간이면 끝나는 날짜만 보여준다.
+		if ( cashProduct:isApplyDiscount() ) then
+			local	startDiscountTimeValue	= PATime( cashProduct:getStartDiscountTime():get_s64() )
+			local	endDiscountTimeValue	= PATime( cashProduct:getEndDiscountTime():get_s64() )
+			local	startDiscountTime		= tostring( startDiscountTimeValue:GetYear() )	.. "." .. tostring( startDiscountTimeValue:GetMonth() ) .. "." .. tostring( startDiscountTimeValue:GetDay()	)
+			local	endDiscountTime			= PAGetStringParam3(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_DISCOUNTTIME", "GetYear", tostring( endDiscountTimeValue:GetYear() ), "GetMonth", tostring( endDiscountTimeValue:GetMonth() ), "GetDay", tostring( endDiscountTimeValue:GetDay())) .. " " .. string.format( "%.02d", endDiscountTimeValue:GetHour() ) .. ":" .. string.format( "%.02d", endDiscountTimeValue:GetMinute() ) -- tostring( endDiscountTimeValue:GetYear() )	.. "년" .. tostring( endDiscountTimeValue:GetMonth() )	.. "월" .. tostring( endDiscountTimeValue:GetDay() .. "일 "
+			if (true == disCountSetUse) then
+				endDiscountTime = convertStringFromDatetime(cashProduct:getRemainDiscountTime())
+			else
+				endDiscountTime = PAGetStringParam3(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_DISCOUNTTIME", "GetYear", tostring( endDiscountTimeValue:GetYear() ), "GetMonth", tostring( endDiscountTimeValue:GetMonth() ), "GetDay", tostring( endDiscountTimeValue:GetDay())) .. " " .. string.format( "%.02d", endDiscountTimeValue:GetHour() ) .. ":" .. string.format( "%.02d", endDiscountTimeValue:GetMinute() )
+			end
+			self._static_DiscountPeriodDesc:SetText( PAGetStringParam1(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_DISCOUNTPERIODDESC", "endDiscountTime", endDiscountTime) )-- "<PAColor0xfface400>- 할인 기간 : " .. endDiscountTime .. "까지<PAOldColor>"
+			self._static_DiscountPeriodDesc:SetShow( true )
+			self._static_DiscountPeriodDesc:SetPosY( optionDesc_PosY + descConfig._gapY * descCount)
+
+			-- self._static_Price				:SetText( "<PAColor0xFF626262>" .. makeDotMoney(cashProduct:getOriginalPrice()) .. "<PAOldColor> <PAColor0xffefefef>→ " .. makeDotMoney(cashProduct:getPrice()) .. "<PAOldColor>" )
+
+			descCount	= descCount + 1
+		end
+
+		self._static_ItemListTitle		:SetPosY( (optionDesc_PosY + descConfig._gapY * descCount) )
+		descCount	= descCount + 1
+		optionDesc_PosY = optionDesc_PosY + inGameShop._items[0].iconBG:GetSizeY() + 20	-- 패키지 아이템 사이즈를 더해야 한다.
+		inGameShop.itemDescDetailSize = optionDesc_PosY + descConfig._gapY * descCount
+
+		inGameShop._maxDescSize = inGameShop.itemDescDetailSize
+		-- self._static_PiceBG				:SetPosY( (optionDesc_PosY + descConfig._gapY * descCount) )
+		-- descCount	= descCount + 1
+		-- optionDesc_PosY = optionDesc_PosY + 15										-- 펄 배경 높이를 더해야 한다.
+
+		-- if self._static_RelatedItemTitle:GetShow() then
+		-- 	self._static_RelatedItemTitle	:SetPosY( (optionDesc_PosY + descConfig._gapY * descCount) )
+		-- 	descCount	= descCount + 1
+		-- end
+	--}
+	
+	--크기 및 사이즈 조절
+	--{
+		-- Panel_IngameCashShop_GoodsDetailInfo:SetSize( Panel_IngameCashShop_GoodsDetailInfo:GetSizeX(), panel_SizeY )
+	--}
+end
+
+function	IngameCashShop_initDescData()
+	local self = inGameShop.desc
+	inGameShop._comboList		= Array.new()
+	inGameShop._listComboCount	= 1
+	local	count		= getIngameCashMall():getCashProductStaticStatusListCount()
+	for ii=0, count -1 do
+		local	cashProduct	= getIngameCashMall():getCashProductStaticStatusByIndex(ii)
+		if	nil ~= cashProduct	then
+			if	IngameCashShop_filterData( cashProduct )	then
+				inGameShop._comboList[inGameShop._listComboCount]	= cashProduct:getNoRaw()
+				inGameShop._listComboCount		= inGameShop._listComboCount + 1
+			end
+		end
+	end
+	
+	IngameCashShop_sortData()
+	
+	self._static_ItemNameCombo:DeleteAllItem()
+	self._static_ItemNameCombo:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_ITEMNAMECOMBO") )-- "선택 옵션이 없습니다."
+	self._static_ItemNameCombo:SetMonoTone( true )
+	self._static_ItemNameCombo:SetEnable( false )
+	
+	for ii=inGameShop._listComboCount-1, 0, -1 do
+		local subProduct	= getIngameCashMall():getCashProductStaticStatusByProductNoRaw( inGameShop._comboList[ii] )
+		if	( nil ~= subProduct )	then
+			self._static_ItemNameCombo:AddItemWithKey( subProduct:getName(), subProduct:getNoRaw() )
+			self._static_ItemNameCombo:SetMonoTone( false )
+			self._static_ItemNameCombo:SetEnable( true )
+		end
+	end
+
+	if	( 0 < count )	then
+		self._static_ItemNameCombo:SetSelectItemIndex( 0 )
+	end
+end
+
+function	IngameCashShop_filterData( cashProduct )
+	local self = inGameShop
+	if	( not CheckCashProduct(cashProduct) )	then
+		return(false)
+	end
+	
+	local	currentCashProduct	= getIngameCashMall():getCashProductStaticStatusByProductNoRaw( self._openProductKeyRaw )
+	if	( nil == currentCashProduct )	then
+		return(false)
+	end
+		
+	-- OfferGroup
+	if	( 0 == cashProduct:getOfferGroup() )	then
+		return(false)
+	end
+	
+	if	( cashProduct:getOfferGroup() ~= currentCashProduct:getOfferGroup() )	then
+		return(false)
+	end
+	
+	return(true)
+end
+
+function	IngameCashShop_SortCash( lhs, rhs )
+	local	self	= inGameShop
+	local	lhsNo	= nil
+	local	rhsNo	= nil
+		
+	local	lhsWrapper	= getIngameCashMall():getCashProductStaticStatusByProductNoRaw( lhs )
+	if	( nil ~= lhsWrapper )	then
+		lhsNo		= lhsWrapper:getNoRaw()
+	end
+	
+	local	rhsWrapper	= getIngameCashMall():getCashProductStaticStatusByProductNoRaw( rhs )
+	if	( nil ~= rhsWrapper )	then
+		rhsNo		= rhsWrapper:getNoRaw()
+	end
+	
+	return( lhsNo > rhsNo )
+end
+
+function	IngameCashShop_sortData()
+	local self = inGameShop
+	table.sort( self._comboList, IngameCashShop_SortCash )
+end
+
+function HandleClicked_IngameCashShop_ShowSubList()
+	local self	= inGameShop.desc
+	Panel_IngameCashShop:SetChildIndex(self._static_ItemNameCombo, 9999 )
+
+	local list	= self._static_ItemNameCombo:GetListControl()
+	self._static_ItemNameCombo:ToggleListbox()
+end
+
+function HandleClicked_IngameCashShop_SelectedSubList()
+	local	self		= inGameShop.desc
+	local	selectIndex	= self._static_ItemNameCombo:GetSelectIndex()
+	local	selectKey	= self._static_ItemNameCombo:GetSelectKey()
+
+
+	if -1 == selectIndex then
+		return
+	end
+	inGameShop._openProductKeyRaw		= selectKey
+	-- inGameShop._selectIndex				= selectIndex
+	self._static_ItemNameCombo:SetSelectItemIndex( selectIndex )
+	-- IngameCashShop_initDescData()
+	IngameCashShop_DescUpdate()
+	-- FGlobal_InGameSHopDetailInfo_Open( selectKey, selectIndex )
+end
+
+function InGameShop_ShowItemToolTip( isShow, index )
+	local self			= inGameShop
+	if true == isShow then
+		local cashProduct	= getIngameCashMall():getCashProductStaticStatusByProductNoRaw( self._openProductKeyRaw )
+		local itemWrapper	= cashProduct:getItemByIndex( index )
+		local slotIcon		= self._items[index].icon
+		Panel_Tooltip_Item_Show( itemWrapper, slotIcon, true, false, nil )
+	else
+		Panel_Tooltip_Item_hideTooltip()
+	end
+end
+
 function    IngameCashShop_SelectedItem( index )
 	local   self    = inGameShop
 	local   slot    = self._slots[index]
-	self._openProductKeyRaw = slot.productNoRaw -- 배경 변경을 위해
-	
+
+	local prevIndex = -1
+
+	if self._openProductKeyRaw == slot.productNoRaw then
+		return
+	end
 	audioPostEvent_SystemUi(01,00)
-	IngameCashShop_SelectedItemXXX(slot.productNoRaw)
+	IngameCashShop_SelectedItemXXX(slot.productNoRaw, false)
 end
 	
-function    IngameCashShop_SelectedItemXXX( productNoRaw )
+function    IngameCashShop_SelectedItemXXX( productNoRaw, isForcePositionSet )
 	local   self    = inGameShop
 	local   cashProduct = getIngameCashMall():getCashProductStaticStatusByProductNoRaw( productNoRaw )
 	if  ( nil == cashProduct )  then
 		return
 	end
+
+	local	prevPos			= 0
+	local 	prevKeyRaw		= self._openProductKeyRaw
+
+	for ii = 0, self._listCount - 1 do
+		local   productNoRawInList= self._list[ii+1]
+
+		if ( self:isSelectProductGroup(productNoRaw) or productNoRawInList == productNoRaw ) then
+			prevPos = prevPos - self._position
+			break
+		end
+
+		if ( self:isSelectProductGroup(productNoRawInList) ) then
+			prevPos = prevPos + self._goodDescBG:GetSizeY()
+		end
+
+		prevPos = prevPos + self._config._slot._gapY
+	end	
+
 	
-	FGlobal_InGameSHopDetailInfo_Open( productNoRaw, 0 )
+	self._openProductKeyRaw = productNoRaw -- 배경 변경을 위해
+	self._goodDescBG:SetShow(true)
+	IngameCashShop_initDescData()
+	if ( isForcePositionSet ) then
+		local	pos				= 0
+	
+		for ii = 0, self._listCount - 1 do
+			local   productNoRaw= self._list[ii+1]
+
+			if ( self:isSelectProductGroup(productNoRaw) ) then
+				if ( 100 < pos ) then
+					pos = pos - 100
+				end
+				if ( prevPos < pos ) then
+					pos = pos - self._goodDescBG:GetSizeY()
+				end
+
+				self._position = pos
+				self._currentPos = self._position
+
+				self._scroll_IngameCash:SetControlPos(self._position / self:getMaxPosition())
+				break
+			end
+	
+			pos = pos + self._config._slot._gapY
+		end	
+	else
+		local	pos				= 0
+	
+		for ii = 0, self._listCount - 1 do
+			local   productNoRaw= self._list[ii+1]
+
+			if ( self:isSelectProductGroup(productNoRaw) ) then
+
+				if ( -1 == prevKeyRaw ) then
+					break
+				end
+
+				
+				pos = pos - prevPos
+
+				local listSize = self:getMaxPosition()
+				if ( listSize < 0 ) or ( pos < 0 ) then
+					self._position = 0
+				else
+					self._position = pos
+
+					if ( listSize < self._position ) then
+						self._position = listSize
+					end
+
+					self._currentPos = self._position
+
+					self._scroll_IngameCash:SetControlPos(self._position / self:getMaxPosition())
+				end
+				break
+			end
+	
+			pos = pos + self._config._slot._gapY
+		end	
+	end
+
+	self._goodDescBG:SetSize(self._goodDescBG:GetSizeX(), 1)
+	IngameCashShop_DescUpdate()
+
+	-- FGlobal_InGameSHopDetailInfo_Open( productNoRaw, 0 )
 	FGlobal_CashShop_SetEquip_Update( productNoRaw )
 	self:update()
 end
@@ -1449,6 +2075,13 @@ end
 function FGlobal_IngameCashShop_SelectedItemReset()
 	local   self    = inGameShop
 	self._openProductKeyRaw = -1
+	self._goodDescBG:SetShow(false)
+	self._goodDescBG:SetSize(self._goodDescBG:GetSizeX(), 1)
+	local listSize = self:getMaxPosition()
+	if ( self._static_ScrollArea:GetSizeY() <= listSize ) and ( listSize < self._currentPos ) then
+		self._position = self:getMaxPosition()
+		self._scroll_IngameCash:SetControlPos(1)
+	end
 	self:update()
 end
 
@@ -1462,18 +2095,33 @@ end
 function    IngameCashShop_CartItem( index )
 	local   self    = inGameShop
 	local   slot    = self._slots[index]
-	
-	local   cashProduct = getIngameCashMall():getCashProductStaticStatusByProductNoRaw(slot.productNoRaw)
+
+	local tempSaveProductKeyRaw = slot.productNoRaw
+	if ( -1 ~= inGameShop._openProductKeyRaw ) then
+		if (inGameShop._openProductKeyRaw == slot.productNoRaw) then
+			tempSaveProductKeyRaw = slot.productNoRaw
+		else
+			if ( self:isSelectProductGroup(slot.productNoRaw) ) then
+				tempSaveProductKeyRaw = self._openProductKeyRaw
+			else
+				tempSaveProductKeyRaw = slot.productNoRaw
+			end
+		end
+	else
+		tempSaveProductKeyRaw = slot.productNoRaw
+	end
+
+	local   cashProduct = getIngameCashMall():getCashProductStaticStatusByProductNoRaw(tempSaveProductKeyRaw)
 	if  ( nil == cashProduct )  then
 		return
 	end
-	if ( false == getIngameCashMall():checkPushableInCart( slot.productNoRaw, 1) ) then
+	if ( false == getIngameCashMall():checkPushableInCart( tempSaveProductKeyRaw, 1) ) then
 		return
 	end
 
 	local doAnotherClassItem = function()
 		Proc_ShowMessage_Ack( PAGetStringParam1(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_CARTITEM_ACK", "getName", cashProduct:getName()) )-- cashProduct:getName() .. " 상품이 장바구니에 담겼습니다." )
-		FGlobal_PushCart_IngameCashShop_NewCart( slot.productNoRaw, 1)
+		FGlobal_PushCart_IngameCashShop_NewCart( tempSaveProductKeyRaw, 1)
 		return
 	end
 
@@ -1485,7 +2133,7 @@ function    IngameCashShop_CartItem( index )
 			MessageBox.showMessageBox(messageBoxData)
 		else
 			Proc_ShowMessage_Ack( PAGetStringParam1(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_CARTITEM_ACK", "getName", cashProduct:getName()) )-- cashProduct:getName() .. " 상품이 장바구니에 담겼습니다." )
-			FGlobal_PushCart_IngameCashShop_NewCart( slot.productNoRaw, 1)
+			FGlobal_PushCart_IngameCashShop_NewCart( tempSaveProductKeyRaw, 1)
 		end
 	-- }
 end
@@ -1493,13 +2141,37 @@ end
 function    IngameCashShop_GiftItem( index )
 	local   self    = inGameShop
 	local   slot    = self._slots[index]
-	
+	local selfplayer	= getSelfPlayer()
+	if nil == selfplayer then
+		return
+	end
+	local limitLevel = 30
+	local myLevel = selfplayer:get():getLevel()
+	if myLevel < limitLevel and isGameTypeEnglish() then	-- 북미일 경우 신용카드 도용으로 선물하기 문제가 있어서 레벨 제한을 둔다.
+		Proc_ShowMessage_Ack( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_LIMIT_20LEVEL", "level", limitLevel ) ) -- "20레벨부터 선물하기가 가능합니다.")
+		return
+	end
+
+
 	local   cashProduct = getIngameCashMall():getCashProductStaticStatusByProductNoRaw(slot.productNoRaw)
 	if  ( nil == cashProduct )  then
 		return
 	end
-	
-	FGlobal_InGameShopBuy_Open( slot.productNoRaw, true )
+	local tempSaveProductKeyRaw = slot.productNoRaw
+	if ( -1 ~= inGameShop._openProductKeyRaw ) then
+		if (inGameShop._openProductKeyRaw == slot.productNoRaw) then
+			tempSaveProductKeyRaw = slot.productNoRaw
+		else
+			if ( self:isSelectProductGroup(slot.productNoRaw) ) then
+				tempSaveProductKeyRaw = self._openProductKeyRaw
+			else
+				tempSaveProductKeyRaw = slot.productNoRaw
+			end
+		end
+	else
+		tempSaveProductKeyRaw = slot.productNoRaw
+	end
+	FGlobal_InGameShopBuy_Open( tempSaveProductKeyRaw, true )
 end
 
 function    IngameCashShop_BuyItem( index )
@@ -1510,13 +2182,28 @@ function    IngameCashShop_BuyItem( index )
 	if  ( nil == cashProduct )  then
 		return
 	end
-	
+
+	local tempSaveProductKeyRaw = slot.productNoRaw
+	if ( -1 ~= inGameShop._openProductKeyRaw ) then
+		if (inGameShop._openProductKeyRaw == slot.productNoRaw) then
+			tempSaveProductKeyRaw = slot.productNoRaw
+		else
+			if ( self:isSelectProductGroup(slot.productNoRaw) ) then
+				tempSaveProductKeyRaw = self._openProductKeyRaw
+			else
+				tempSaveProductKeyRaw = slot.productNoRaw
+			end
+		end
+	else
+		tempSaveProductKeyRaw = slot.productNoRaw
+	end
+
 	local isPearlTab		= (0 == self._currentTab)
 	if true == isPearlTab and true == isKorea and true == isNaver then	-- 네이버 링크를 띄운다.
 		local naverLink = "http://black.game.naver.com/black/billing/shop/index.daum"
 		ToClient_OpenChargeWebPage( naverLink, true )
 	else
-		FGlobal_InGameShopBuy_Open( slot.productNoRaw, false )
+		FGlobal_InGameShopBuy_Open( tempSaveProductKeyRaw, false )
 	end
 end
 
@@ -1534,10 +2221,11 @@ end
 function    InGameShop_SelectClass()
 	local   self        = inGameShop
 	local   selectIndex = self._combo_Class:GetSelectIndex()
-	
 	if -1 == selectIndex then
 		return
 	end
+
+	self._goodDescBG:SetShow( false )
 	
 	if  ( getCharacterClassCount() == self._combo_Class:GetSelectKey() and 0 == self._combo_Class:GetSelectIndex() )    then
 		self._currentClass  = nil
@@ -1548,7 +2236,10 @@ function    InGameShop_SelectClass()
 	audioPostEvent_SystemUi(00,00)
 	self._combo_Class:SetSelectItemIndex( selectIndex )
 
-	self._startSlotIndex = 0
+	self._currentPos = 0
+	self._position = 0
+	self._scroll_IngameCash:SetControlPos(0)
+	self._goodDescBG:SetSize(self._goodDescBG:GetSizeX(), 1)
 	self:initData()
 	self:update()
 end
@@ -1567,7 +2258,7 @@ function    InGameShop_SelectSort()
 	if -1 == selectIndex then
 		return
 	end
-
+	self._goodDescBG:SetShow( false )
 	audioPostEvent_SystemUi(00,00)
 	self._combo_Sort:SetSelectItemIndex( selectIndex )
 	if  ( 0 == self._combo_Sort:GetSelectKey() )    then
@@ -1576,7 +2267,10 @@ function    InGameShop_SelectSort()
 		self._currentSort   = self._combo_Sort:GetSelectKey()
 	end 
 	
-	self._startSlotIndex = 0
+	self._currentPos = 0
+	self._position = 0
+	self._scroll_IngameCash:SetControlPos(0)
+	self._goodDescBG:SetSize(self._goodDescBG:GetSizeX(), 1)
 	self:initData()
 	self:update()
 end
@@ -1594,7 +2288,7 @@ function InGameShop_SelectSubFilter()
 	if -1 == selectIndex then
 		return
 	end
-
+	self._goodDescBG:SetShow( false )
 	audioPostEvent_SystemUi(00,00)
 	self._combo_SubFilter:SetSelectItemIndex( selectIndex )
 	if  ( 0 == self._combo_SubFilter:GetSelectKey() )    then
@@ -1603,7 +2297,10 @@ function InGameShop_SelectSubFilter()
 		self._currentSubFilter   = self._combo_SubFilter:GetSelectKey()
 	end 
 	
-	self._startSlotIndex = 0
+	self._currentPos = 0
+	self._position = 0
+	self._scroll_IngameCash:SetControlPos(0)
+	self._goodDescBG:SetSize(self._goodDescBG:GetSizeX(), 1)
 	self:initData()
 	self:update()
 end
@@ -1626,9 +2323,9 @@ end
 
 function    InGameShop_UpdateCash()
 	local   self        = inGameShop
-	local   cash, pearl, mileage = self:updateMoney()
-	
-	return cash, pearl, mileage
+	local   cash, pearl, mileage, money = self:updateMoney()
+
+	return cash, pearl, mileage, money
 end
 
 function    InGameShop_OuterEventByAttacked()
@@ -1703,11 +2400,15 @@ function    InGameShop_Resize()
 
 	-- 하단 그라데이션 배경 위치
 	self._static_GradationBottom:SetPosX( slotConfig._startX )
-	self._static_GradationBottom:SetPosY( slotConfig._startY + (slotConfig._gapY * (self._slotCount - 1)) + 8 )
+	self._static_GradationBottom:SetPosY( self._static_ScrollArea:GetSizeY() + self._static_ScrollArea:GetPosY()-50 )
 
 	-- 스크롤 및 스크롤 영역 크기
 	self._scroll_IngameCash:SetSize( self._scroll_IngameCash:GetSizeX(), ( remainingSizeY*0.98 ) )
 	self._static_ScrollArea:SetSize( self._static_ScrollArea:GetSizeX(), ( remainingSizeY*0.98 ) )
+	self._static_ScrollArea1:SetPosY(0)
+	self._static_ScrollArea1:SetSize(self._static_ScrollArea1:GetSizeX(), self._static_ScrollArea:GetPosY())
+	self._static_ScrollArea2:SetPosY(self._static_ScrollArea:GetPosY() + self._static_ScrollArea:GetSizeY())
+	self._static_ScrollArea2:SetSize(self._static_ScrollArea2:GetSizeX(), 1000)
 
 	-- 카트 위치와 크기
 	local cartPosX = Panel_IngameCashShop:GetPosX() + slotConfig._startX
@@ -1716,31 +2417,110 @@ function    InGameShop_Resize()
 	
 	-- 프로모션 배너 
 	self._promotionWeb:SetSize( self._promotionWeb:GetSizeX(), self._promotionSizeY )
+	self._static_GradationTop:SetPosX( slotConfig._startX )
+	self._static_GradationTop:SetPosY( slotConfig._startY )
+		
+	self._static_GradationBottom:SetPosX( slotConfig._startX )
+	self._static_GradationBottom:SetPosY( self._static_ScrollArea:GetSizeY() + self._static_ScrollArea:GetPosY() - self._static_GradationBottom:GetSizeY() )
+
+	Panel_IngameCashShop:SetChildIndex(self._static_GradationTop, 9999 )
+	Panel_IngameCashShop:SetChildIndex(self._static_GradationBottom, 9999 )
+	Panel_IngameCashShop:SetChildIndex(self._promotionWeb, 9999 ) 
 end
 
 function _ingameCashShop_SetViewListCount()
 	local self              = inGameShop
 	local scrSizeY          = getScreenSizeY()
+	local areaPosY			= self._static_ScrollArea:GetPosY()
 
 	local banner            = self._static_PromotionBanner:GetPosY() + self._static_PromotionBanner:GetSizeY()
 																						-- 프로모션 배너까지
 	local bannerEndGap      = ( self._static_TopLineBG:GetPosY() - (self._static_PromotionBanner:GetPosY() + self._static_PromotionBanner:GetSizeY()) )                                         -- 프로모션 배너 끝에서 필터 시작 사이
 	local filterFize        = self._static_TopLineBG:GetSizeY() + ( self._static_TopLineBG:GetPosY() - (self._static_PromotionBanner:GetPosY() + self._static_PromotionBanner:GetSizeY()) )     -- 필터 크기
-	local endGap            = self._slots[0].static:GetPosY() - ( self._static_TopLineBG:GetPosY() + self._static_TopLineBG:GetSizeY() )                                                        -- 충전 영역 전과 리스트 마지막 사이 간격
+	local endGap            = areaPosY - ( self._static_TopLineBG:GetPosY() + self._static_TopLineBG:GetSizeY() )									                                            -- 충전 영역 전과 리스트 마지막 사이 간격
 	local chargeSize        = ( (self._haveCashBoxBG:GetSpanSize().y ) + self._haveCashBoxBG:GetSizeY() )                                                                                       -- 충전 BG 시작부터 끝까지
 
 	local fixedHeight       = banner + bannerEndGap + filterFize + endGap + chargeSize
 
 	self._promotionSizeY    = scrSizeY - endGap - chargeSize - self._static_PromotionBanner:GetPosY()   -- 프로모션 페이지 사이즈.
 	
-	local gapBetweenList    = self._slots[1].static:GetPosY() - self._slots[0].static:GetPosY() - self._slots[0].static:GetSizeY()
-	local remainingSizeY    = scrSizeY - fixedHeight + gapBetweenList   -- 마지막 간격을 빼기 위해 gapBetweenList을 한 번 더한다.
+	local gapBetweenList    = self._config._slot._gapY
+	local remainingSizeY    = scrSizeY - fixedHeight
 
-	local possiableList     = math.floor( remainingSizeY / (self._slots[0].static:GetSizeY() + gapBetweenList) )
+	local possiableList     = math.floor( remainingSizeY / gapBetweenList )
 
-	self._slotCount = possiableList
+	self._slotCount = possiableList + 1
 
 	return remainingSizeY
+end
+
+local cumulatedTime = 0
+function InGameCashshopUpdatePerFrame( deltaTime )
+	if (true == disCountSetUse) then
+		cumulatedTime = cumulatedTime + deltaTime 
+		if( 1.0 < cumulatedTime ) then
+			cumulatedTime = 0
+			CashShopUpdateRamainedTimePerSecond()
+		end
+	end
+
+	InGameCashshopDescUpdate( deltaTime )
+end
+-- 북미 전용 함수.
+function CashShopUpdateRamainedTimePerSecond()
+	local self = inGameShop
+	local   cashProduct	= getIngameCashMall():getCashProductStaticStatusByProductNoRaw(self._openProductKeyRaw)
+	if nil == cashProduct then
+		return
+	end
+	local	itemCount	= cashProduct:getItemListCount()
+	for ii = 0, itemCount - 1 do
+		local remainTime = cashProduct:getRemainDiscountTime()
+
+		if cashProduct:isApplyDiscount() then
+			self.desc._static_DiscountPeriodDesc:SetText( PAGetStringParam1(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_GOODSDETAILINFO_DISCOUNTPERIODDESC", "endDiscountTime", convertStringFromDatetime(remainTime)) )
+		end
+	end
+
+end
+
+
+function InGameCashshopDescUpdate( deltaTime )
+	local self = inGameShop
+
+	if ( self._position == self._currentPos ) and (self._maxDescSize == self._goodDescBG:GetSizeY()) then
+		return
+	end
+
+	self._currentPos = self._currentPos + (self._position - self._currentPos) * deltaTime * 15
+
+	if ( math.abs(self._position - self._currentPos) < 1 ) then
+		self._currentPos = self._position
+	end
+
+	if ( -1 ~= self._openProductKeyRaw ) then
+		self._goodDescBG:SetSize( self._goodDescBG:GetSizeX(), self._goodDescBG:GetSizeY() + ( self._maxDescSize - self._goodDescBG:GetSizeY() ) * deltaTime * 3)
+		if ( self._maxDescSize - self._goodDescBG:GetSizeY() < 1 ) then
+			self._goodDescBG:SetSize( self._goodDescBG:GetSizeX(), self._maxDescSize )
+		end
+		
+	end
+
+	self:updateSlot()
+	-- if ( self._goodDescBG:GetShow() ) then
+	-- 	IngameCashShop_DescUpdate()
+	-- 	for _, control in pairs( inGameShop.desc ) do
+	-- 		if ( control:GetShow() ) then
+	-- 			control:SetShow( control:GetPosY() + control:GetSizeY() < self._goodDescBG:GetSizeY() )
+	-- 		end
+	-- 	end
+	-- end
+
+	for _, control in pairs( inGameShop.desc ) do
+		-- IngameCashShop_Descinit()
+		control:SetShow( control:GetPosY() + control:GetSizeY() < self._goodDescBG:GetSizeY() )
+		IngameCashShop_DescUpdate()
+	end
 end
 
 ----------------------------------------------------------------------------------------------------
@@ -1750,7 +2530,7 @@ function    InGameShop_Open()
 	if( isFlushedUI() ) then
 		return
 	end
-
+	-- FGlobal_IngameCashShop_SelectedItemReset()
 	local terraintype = selfPlayerNaviMaterial()	-- 물이나 공중에서 열 수 없다.
 	if 8 == terraintype or 9 == terraintype then
 		Proc_ShowMessage_Ack( PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_DONTOPEN_INWATER") ) -- "물 속에서 이용할 수 없습니다." )
@@ -1763,10 +2543,10 @@ function    InGameShop_Open()
 		return
 	end
 	
-	if not IsSelfPlayerWaitAction() then
-		Proc_ShowMessage_Ack( PAGetString(Defines.StringSheet_GAME, "LUA_CURRENTACTION_NOT_CASHSHOP") )
-		return
-	end
+	-- if not IsSelfPlayerWaitAction() then
+	-- 	Proc_ShowMessage_Ack( PAGetString(Defines.StringSheet_GAME, "LUA_CURRENTACTION_NOT_CASHSHOP") )
+	-- 	return
+	-- end
 	
 	if  ( Panel_IngameCashShop:GetShow() )  then
 		return
@@ -1835,8 +2615,13 @@ function    InGameShop_Open()
 	local categoryUrl   = ""
 	local promotionUrl  = ""
 	--if isGameServiceTypeKorReal() then
+	if isServerFixedCharge() then		-- 러시아 P2P(정액제)
+		promotionUrl    = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_PROMOTIONURL_P2P")
+		categoryUrl     = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_CATEGORYURL_P2P")
+	else
 		promotionUrl    = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_PROMOTIONURL")
 		categoryUrl     = PAGetString(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_BUYORGIFT_URL_CATEGORYURL")
+	end
 	--else
 	--  promotionUrl    = "http://dev.pub.game.daum.net/black/internal/shop/index.daum"
 	--  categoryUrl     = "http://dev.pub.game.daum.net/black/internal/shop/detail/index.daum"
@@ -1919,132 +2704,6 @@ function    InGameShop_Close()
 	reloadGameUI()
 end
 
-local cumulatedTime = 0
-function InGameShop_DisCountPerFrame( deltaTime )
-	local self = inGameShop
-	cumulatedTime = cumulatedTime + deltaTime 
-	if( 1.0 < cumulatedTime ) then
-		cumulatedTime = 0
-		local   maxSlotCount= self._slotCount
-		local   index   = 0
-		for ii = 0, self._listCount - 1 do
-			if  ( self._startSlotIndex <= ii )  then
-				local   productNoRaw= self._list[ii+1]
-				local   cashProduct = getIngameCashMall():getCashProductStaticStatusByProductNoRaw(productNoRaw)
-				if  ( nil ~= cashProduct )  then
-					local   slot    = self._slots[index]
-					-- 배경을 바꿔야 한다.
-					if self._openProductKeyRaw == productNoRaw then
-						InGameShop_ProductListContent_ChangeTexture( index, true )
-					else
-						InGameShop_ProductListContent_ChangeTexture( index, false )
-					end
-					slot.productNoRaw       = productNoRaw
-					if nil == cashProduct:getPackageIcon() then
-						slot.productIcon    :ChangeTextureInfoName( nilProductIconPath )
-					else
-						slot.productIcon    :ChangeTextureInfoName( cashProduct:getPackageIcon() )
-					end
-	
-					tag_changeTexture( index, cashProduct:getTag() )    -- 태그 이미지 적용.
-
-					if nil == cashProduct:getIconPath() then
-						slot.icon           :ChangeTextureInfoName( "Icon/" .. nilIconPath )
-					else
-						slot.icon           :ChangeTextureInfoName( "Icon/" .. cashProduct:getIconPath() )
-					end
-					slot.icon           :addInputEvent("Mouse_On",  "InGameShop_ProductShowToolTip( " .. slot.productNoRaw .. ", " .. index .. " )")
-					slot.icon           :addInputEvent("Mouse_Out", "FGlobal_CashShop_GoodsTooltipInfo_Close()")
-
-					slot.name           :SetText( cashProduct:getDisplayName() )
-					slot.price          :SetText( makeDotMoney(cashProduct:getPrice()) )
-					slot.originalPrice  :SetShow( false )
-					
-					-- 할인기간중이면 할인기간을 표시, 아니면 기본 정보를 표시한다.
-					slot.discount:SetText( cashProduct:getDescription() )
-					
-					if  ( cashProduct:isApplyDiscount() )   then
-						local   remainTime = convertStringFromDatetime(cashProduct:getRemainDiscountTime())
-						-- local   remainTime = "Modify me"
-
-						slot.discount:SetText( PAGetStringParam1(Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_DISCOUNT", "endDiscountTime", remainTime) )
-						slot.originalPrice  :SetText( makeDotMoney(cashProduct:getOriginalPrice()) .. " <PAColor0xffefefef>→<PAOldColor> " )
-						slot.originalPrice  :SetShow( true )
-					end
-
-					-- 펄 아이콘을 바꾼다.
-					InGameShop_ProductListContent_ChangeMoneyIconTexture( index, cashProduct:getCategory(), cashProduct:isMoneyPrice() )
-					local limitType = cashProduct:getCashPurchaseLimitType()
-					if UI_CCC.eCashProductCategory_Pearl == cashProduct:getCategory() or UI_CCC.eCashProductCategory_Mileage == cashProduct:getCategory() then
-						slot.buttonBuy  :SetMonoTone( false )
-						slot.buttonGift :SetMonoTone( true )
-						slot.buttonCart :SetMonoTone( true )
-						
-						slot.buttonBuy  :SetEnable( true )
-						slot.buttonGift :SetEnable( false )
-						slot.buttonCart :SetEnable( false )
-					else
-						if UI_PLT.None ~= limitType then
-							local limitCount    = cashProduct:getCashPurchaseCount()
-							local mylimitCount  = getIngameCashMall():getRemainingLimitCount( cashProduct:getNoRaw() )
-							if 0 < limitCount then
-								slot.buttonBuy  :SetMonoTone( false )
-								slot.buttonGift :SetMonoTone( true )
-								slot.buttonCart :SetMonoTone( false )
-								
-								slot.buttonBuy  :SetEnable( true )
-								slot.buttonGift :SetEnable( false )
-								slot.buttonCart :SetEnable( true )
-
-								if mylimitCount <= 0 then
-									slot.buttonBuy  :SetMonoTone( true )
-									slot.buttonCart :SetMonoTone( true )
-
-									slot.buttonBuy  :SetEnable( false )
-									slot.buttonCart :SetEnable( false )
-								end
-							else
-								slot.buttonBuy  :SetMonoTone( true )
-								slot.buttonGift :SetMonoTone( true )
-								slot.buttonCart :SetMonoTone( true )
-								
-								slot.buttonBuy  :SetEnable( false )
-								slot.buttonGift :SetEnable( false )
-								slot.buttonCart :SetEnable( false )
-							end
-						else
-							slot.buttonBuy:SetMonoTone( false )
-							slot.buttonGift:SetMonoTone( false )
-							slot.buttonCart:SetMonoTone( false )
-
-							slot.buttonBuy:SetEnable( true )
-							slot.buttonGift:SetEnable( true )
-							slot.buttonCart:SetEnable( true )
-						end
-					end
-					
-					slot.static:SetShow(true)
-					if 0 == self._startSlotIndex then   -- 0이면 위화살표 노출 안함.
-						self._static_GradationTop:SetShow( false )
-					else
-						self._static_GradationTop:SetShow( true )
-					end
-					if (self._listCount - 1) <= (self._startSlotIndex + maxSlotCount) + 1 then  -- 마지막까지 나오면 아래화살표 노출 안함.
-						self._static_GradationBottom:SetShow( false )
-					else
-						self._static_GradationBottom:SetShow( true )
-					end
-					
-					index   = index + 1
-					if  (maxSlotCount - 1 < index)  then
-						return
-					end
-				end
-			end
-		end
-	end
-end
-
 function    InGameShop_UpdateCartButton()
 	local cartListCount = getIngameCashMall():getCartListCount()
 	-- local stringValue = PAGetStringParam1( Defines.StringSheet_GAME, "LUA_CartButtonText", "count", cartListCount )
@@ -2056,14 +2715,20 @@ function ToClient_RequestShowProduct(productNo, price)
 	local cashProduct = getIngameCashMall():getCashProductStaticStatusByProductNoRaw(productNo)
 	if  ( nil ~= cashProduct )  then
 		local category = cashProduct:getCategory()
+		if ( 9 <= category ) then
+			category = category + 1
+		end
 		InGameShop_TabEvent(category)
 		self._promotionWeb:SetShow( false )
+		self._combo_Class	:SetSelectItemIndex(0)
+		self._currentClass  = nil
+		InGameShop_SelectClass()
 		self:RadioReset()
 		if(nil ~= self._tabs[category]) then
 			self._tabs[category].static:SetCheck( true )
 		end 
 		
-		IngameCashShop_SelectedItemXXX( productNo )
+		IngameCashShop_SelectedItemXXX( productNo, true )
 	end
 end
 
@@ -2074,5 +2739,7 @@ end
 
 -- InGameShop_Close()
 inGameShop:init()
+InGameShop_GameTypeCheck()
+IngameCashShop_Descinit()
 inGameShop:registEventHandler()
-inGameShop:registMessageHandler()
+inGameShop:registMessageHandler()

@@ -18,6 +18,11 @@ local AgreementGuild_Master = {
 	title				= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_AgreementContentTitle" ),
 	content				= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_AgreementContent" ),
 	radioBtnPeriod		= UI.getChildControl( Panel_AgreementGuild_Master, "RadioButton_Period" ),
+
+	penaltyCostTitle	= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_PenaltyCost"),
+	dailyPaymentTitle	= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_DailyPayment"),
+	remainPeriodTitle	= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_Period"),
+
 	remainPeriod		= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_PeriodValue" ),
 	dailyPayment		= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_PaymentValue" ),
 	penaltyCost			= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_PenaltyCostValue" ),
@@ -36,10 +41,14 @@ local AgreementGuild_Master = {
 	maxDailyPayment 	= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_MaxPayment" ),
 	maxpenaltyCost 		= UI.getChildControl( Panel_AgreementGuild_Master, "StaticText_MaxPenaltyCost" ),
 
+	_frame				= UI.getChildControl( Panel_AgreementGuild_Master, "Frame_1"),
+
 	usableActivity		= 0,
 	maxBenefitValue		= 0,
 	maxpenaltyCostValue	= 0,
 }
+_frame_Content	= UI.getChildControl( AgreementGuild_Master._frame, "Frame_1_Content")
+_frame_Summary	= UI.getChildControl( _frame_Content, "StaticText_1")
 
 -- 설정 기간 / 일당 / 위약금 세팅
 local periodValue = {
@@ -73,7 +82,8 @@ for index = 0, 4 do
 	AgreementGuild_Master._radioBtn_Period[index]	=	UI.createControl(  UCT.PA_UI_CONTROL_RADIOBUTTON, Panel_AgreementGuild_Master, "RadioButton_Period_" .. index )
 	CopyBaseProperty( AgreementGuild_Master.radioBtnPeriod, AgreementGuild_Master._radioBtn_Period[index] )
 	AgreementGuild_Master._radioBtn_Period[index]	:	SetText( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_MASTER_DAY", "day", periodValue[index] ) )
-	AgreementGuild_Master._radioBtn_Period[index]	:	SetPosX( AgreementGuild_Master.radioBtnPeriod:GetPosX() + 52 * index )
+	AgreementGuild_Master._radioBtn_Period[index]	:	SetPosX( (AgreementGuild_Master.radioBtnPeriod:GetPosX() + 150) * index )
+	AgreementGuild_Master._radioBtn_Period[index]	:	SetPosY( 480 )
 	AgreementGuild_Master._radioBtn_Period[index]	:	SetShow( false )
 	AgreementGuild_Master._radioBtn_Period[index]	:	addInputEvent( "Mouse_LUp", "HandleClicked_AgreementGuild_Master_SetData(".. index ..")" )
 end
@@ -110,6 +120,21 @@ end
 
 function AgreementGuild_Master:Initialize()
 	AgreementGuild_Master:registEventHandler()
+
+	_frame_Summary			:SetTextMode( CppEnums.TextMode.eTextMode_AutoWrap )
+	if isGameTypeEnglish() then
+		self.dailyPayment_edit	:SetSpanSize( 180, self.dailyPayment_edit:GetSpanSize().y )
+		self.penaltyCost_edit	:SetSpanSize( 180, self.penaltyCost_edit:GetSpanSize().y )
+		self.penaltyCostTitle	:SetSpanSize( 50, self.penaltyCostTitle:GetSpanSize().y )
+		self.dailyPaymentTitle	:SetSpanSize( 50, self.dailyPaymentTitle:GetSpanSize().y )
+		self.remainPeriodTitle	:SetSpanSize( 50, self.remainPeriodTitle:GetSpanSize().y )
+	else
+		self.dailyPayment_edit	:SetSpanSize( 170, self.dailyPayment_edit:GetSpanSize().y )
+		self.penaltyCost_edit	:SetSpanSize( 170, self.penaltyCost_edit:GetSpanSize().y )
+		self.penaltyCostTitle	:SetSpanSize( 75, self.penaltyCostTitle:GetSpanSize().y )
+		self.dailyPaymentTitle	:SetSpanSize( 75, self.dailyPaymentTitle:GetSpanSize().y )
+		self.remainPeriodTitle	:SetSpanSize( 75, self.remainPeriodTitle:GetSpanSize().y )
+	end
 end
 
 function AgreementGuild_Master:Update()
@@ -119,6 +144,7 @@ function AgreementGuild_Master:Update()
 	self.title				:SetText( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_MASTER_CONTRACT", "guildName", guildName ) ) 	
 	self.content			:SetTextMode( UI_TM.eTextMode_AutoWrap )
 	self.content			:SetText( PAGetString( Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_3" ) )
+	self.content			:SetShow( false )
 
 	local isSet = setGuildTextureByGuildNo( guildWrapper:getGuildNo_s64(), self.guildMark )
 	if ( false == isSet ) then
@@ -129,6 +155,17 @@ function AgreementGuild_Master:Update()
 	else
 		self.guildMark:getBaseTexture():setUV(  0, 0, 1, 1  )
 		self.guildMark:setRenderTexture(self.guildMark:getBaseTexture())
+	end
+
+	_frame_Summary:SetAutoResize()
+	_frame_Summary:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_3") )
+	_frame_Content:SetSize(_frame_Content:GetSizeX(), _frame_Summary:GetTextSizeY() )
+	self._frame:UpdateContentPos()
+
+	if _frame_Content:GetSizeY() < self._frame:GetSizeY() then
+		self._frame:GetVScroll():SetShow( false )
+	else
+		self._frame:GetVScroll():SetShow( true )
 	end
 end
 
@@ -156,7 +193,8 @@ function AgreementGuild_Master:SetShowContractPreSet( isShow )
 
 	local sumIndex = 0
 	for index = startRadioIndex, #periodValue do
-		self._radioBtn_Period[index]:SetPosX( self.radioBtnPeriod:GetPosX() + 52 * sumIndex )
+		self._radioBtn_Period[index]:SetPosX( self.radioBtnPeriod:GetPosX() + 80 * sumIndex )
+		-- self._radioBtn_Period[index]:SetPosY(  )
 		self._radioBtn_Period[index]:SetShow( true )
 		self._radioBtn_Period[index]:SetCheck( false )
 		sumIndex = sumIndex + 1

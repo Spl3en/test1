@@ -134,6 +134,7 @@ local panel_WindowList =
 	Panel_LocalWarInfo,
 	Panel_Win_Check,
 	Panel_Window_BlackSpiritAdventure,			-- 125
+	Panel_Chatting_Filter,
 }
 
 local panel_SoundedWindowList =

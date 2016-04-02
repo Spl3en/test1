@@ -10,6 +10,9 @@ local _staticCreateServantNameBG		= UI.getChildControl( Panel_Window_PetRegister
 local _staticCreateServantNameTitle		= UI.getChildControl( Panel_Window_PetRegister,	"StaticText_NamingPolicyTitle")
 local _staticCreateServantName			= UI.getChildControl( Panel_Window_PetRegister,	"StaticText_NamingPolicy")
 
+local _petRegisterBG					= UI.getChildControl( Panel_Window_PetRegister, "Static_PetRegisterBG")
+local _petRegisterDesc					= UI.getChildControl( Panel_Window_PetRegister, "StaticText_Description")
+
 local tempFromWhereType = nil
 local tempFromSlotNo	= nil
 
@@ -26,6 +29,7 @@ function petRegister_init()
 		_staticCreateServantNameBG		:SetShow( false )
 		_staticCreateServantNameTitle	:SetShow( false )
 	end
+	_petRegisterDesc:SetTextMode( UI_TM.eTextMode_AutoWrap )
 end
 
 function petRegister_Close()
@@ -33,6 +37,7 @@ function petRegister_Close()
 		return
 	end
 	UI.Set_ProcessorInputMode(IM.eProcessorInputMode_UiMode)
+	ClearFocusEdit( petNaming )
 	Panel_Window_PetRegister:SetShow( false )
 end
 
@@ -53,8 +58,17 @@ function FromClient_InputPetName( fromWhereType, fromSlotNo )
 
 	petNaming:SetEditText( "", true )
 	petNaming:SetMaxInput( getGameServiceTypePetNameLength() )
-	ClearFocusEdit( petNaming )
 
+	_petRegisterDesc:SetText( PAGetString(Defines.StringSheet_RESOURCE, "PANEL_PETREGISTER_DESC") )
+
+	_petRegisterDesc:SetSize( _petRegisterDesc:GetSizeX(), _petRegisterDesc:GetTextSizeY()+10 )
+	_petRegisterBG:SetSize( _petRegisterBG:GetSizeX(), _petRegisterDesc:GetTextSizeY()+petNaming:GetSizeY()+50 )
+	Panel_Window_PetRegister:SetSize( Panel_Window_PetRegister:GetSizeX(), _petRegisterDesc:GetTextSizeY()+petNaming:GetSizeY()+petRegister:GetSizeY()+110 )
+
+	petRegister:SetSpanSize( petRegister:GetSpanSize().x, 10 )
+	petRegisterCancel:SetSpanSize( petRegisterCancel:GetSpanSize().x, 10 )
+
+	HandleClicked_PetRegister_ClearEdit()
 	Panel_Window_PetRegister:SetShow( true )
 end
 

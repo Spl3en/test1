@@ -627,8 +627,10 @@ function SelfCharacterInfo_UpdateCharacterBasicInfo()
 	CharacterInfo._charactername 				:SetText(tostring(ChaName))	
 	
 	-- (3) 별자리
-	local ZodiacName = player:getZodiacSignOrderStaticStatusWrapper():getZodiacName()			
-	CharacterInfo._zodiac		 				:SetText(tostring(ZodiacName))
+	if nil ~= player:getZodiacSignOrderStaticStatusWrapper() then
+		local ZodiacName = player:getZodiacSignOrderStaticStatusWrapper():getZodiacName()			
+		CharacterInfo._zodiac		 				:SetText(tostring(ZodiacName))
+	end
 end
 
 

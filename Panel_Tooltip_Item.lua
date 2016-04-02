@@ -1542,12 +1542,20 @@ function Panel_Tooltip_Item_ShowInfo(target, inputValue, isSSW, isItemWrapper, c
 
 	-- { 개인 거래 가능 여부
 		target.personalTrade:SetShow( false )	-- 기본은 꺼둔다.
-		if isGameTypeRussia() or CppEnums.CountryType.DEV == getGameServiceType() then	-- 개발이거나 러시아이면 켠다.
+		if isUsePcExchangeInLocalizingValue() or CppEnums.CountryType.DEV == getGameServiceType() then	-- 개발이거나 개인거래가 가능한 국가이면
 			target.personalTrade:SetShow( true )
-			if itemSSW:isPersonalTrade() then	
-				target.personalTrade:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_TOOLTIP_ITEM_PERSONALTRADE_ENABLE") )
-			else
-				target.personalTrade:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_TOOLTIP_ITEM_PERSONALTRADE_DISABLE") )
+			if nil ~= itemWrapper then
+				if itemSSW:isPersonalTrade() and not itemWrapper:get():isVested() then	-- item
+					target.personalTrade:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_TOOLTIP_ITEM_PERSONALTRADE_ENABLE") )
+				else
+					target.personalTrade:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_TOOLTIP_ITEM_PERSONALTRADE_DISABLE") )
+				end
+			elseif nil ~= itemSSW then
+				if itemSSW:isPersonalTrade() then	-- item
+					target.personalTrade:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_TOOLTIP_ITEM_PERSONALTRADE_ENABLE") )
+				else
+					target.personalTrade:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_TOOLTIP_ITEM_PERSONALTRADE_DISABLE") )
+				end
 			end
 		end
 	-- }

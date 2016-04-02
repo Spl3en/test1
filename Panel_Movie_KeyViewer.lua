@@ -4,7 +4,6 @@ local UI_color 		= Defines.Color
 Panel_Movie_KeyViewer:SetDragAll( false )
 Panel_Movie_KeyViewer:SetIgnore( true )
 		
-Panel_Movie_KeyViewer:addInputEvent( "Mouse_PressMove",  "PanelMovieKeyViewer_RefreshPosition()" )
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -118,13 +117,12 @@ local keyIsUpdate = {
 	_button_Q 			= "off",
 }
 
-local panelKeyViewerPosX = Panel_Movie_KeyViewer:GetPosX()
-local panelKeyViewerPosY = Panel_Movie_KeyViewer:GetPosY()
-
 -- {기본 위치 설정
 Panel_Movie_KeyViewer:SetPosX( getScreenSizeX() - ( getScreenSizeX() - Panel_Movie_KeyViewer:GetSizeX() ) - Panel_Movie_KeyViewer:GetSizeX() / 1.5 )
 Panel_Movie_KeyViewer:SetPosY( getScreenSizeY() - ( getScreenSizeY() -  Panel_Movie_KeyViewer:GetSizeY() * 2.3 ) )
 
+local panelKeyViewerPosX = Panel_Movie_KeyViewer:GetPosX()
+local panelKeyViewerPosY = Panel_Movie_KeyViewer:GetPosY()
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -132,6 +130,8 @@ Panel_Movie_KeyViewer:SetPosY( getScreenSizeY() - ( getScreenSizeY() -  Panel_Mo
 function Panel_KeyViewer_ScreenRePosition()
 	local scrX = getScreenSizeX()
 	local scrY = getScreenSizeY()
+
+	changePositionBySever(Panel_Movie_KeyViewer, CppEnums.PAGameUIType.PAGameUIPanel_KeyViewer, true, true, false)
 
 	if scrX < (Panel_Movie_KeyViewer:GetPosX() + Panel_Movie_KeyViewer:GetSizeX()) then
 		Panel_Movie_KeyViewer:SetPosX( scrX - Panel_Movie_KeyViewer:GetSizeX() )
@@ -295,10 +295,7 @@ local forMovieRecord = function()
 	Panel_NpcNavi:SetShow( false )
 end
 
-function PanelMovieKeyViewer_RefreshPosition()
-	panelKeyViewerPosX = Panel_Movie_KeyViewer:GetPosX()
-	panelKeyViewerPosY = Panel_Movie_KeyViewer:GetPosY()
-	
+function PanelMovieKeyViewer_RestorePosition()
 	Panel_Movie_KeyViewer:SetPosX( panelKeyViewerPosX )
 	Panel_Movie_KeyViewer:SetPosY( panelKeyViewerPosY )	
 end
@@ -319,6 +316,4 @@ if ( ToClient_developmentUtility_MovieCaptureMode() == true ) then
 	
 	-- Panel_Movie_KeyViewer:SetDragAll( true)
 	-- Panel_Movie_KeyViewer:SetIgnore( false )
-		
-	-- Panel_Movie_KeyViewer:addInputEvent( "Mouse_PressMove",  "PanelMovieKeyViewer_RefreshPosition()" )
 end

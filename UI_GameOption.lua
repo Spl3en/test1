@@ -206,6 +206,7 @@ local frame_Sound = {
 	_btn_EnvFXOnOff 			= UI.getChildControl ( _frameContent_Sound, "Checkbox_EnvFXOnOff"),
 
 	_btn_RiddingOnOff			= UI.getChildControl ( _frameContent_Sound, "Checkbox_RiddingOnOff"),
+	_btn_WhisperOnOff			= UI.getChildControl ( _frameContent_Sound, "Checkbox_WhisperOnOff"),
 
 	_btn_CombatAllwaysOff		= UI.getChildControl ( _frameContent_Sound, "RadioButton_AllwaysCombatOff"),
 	_btn_CombatAllwaysOn		= UI.getChildControl ( _frameContent_Sound, "RadioButton_AllwaysCombatOn"),
@@ -466,6 +467,8 @@ local chk_Option = {
 
 	currentCheckCombatMusic = CppEnums.BattleSoundType.Sound_Nomal,
 	currentCheckRiddingMusic = true,
+	currentCheckWhisperMusic = true,
+	currentCheckVoiceChatOnOff = false,
 
 	-- 새로 생긴것
 	currentCheckNameTag 			= false,
@@ -550,6 +553,8 @@ local chk_Option = {
 
 	appliedCheckCombatMusic = CppEnums.BattleSoundType.Sound_Nomal,
 	appliedCheckRiddingMusic = true,
+	appliedCheckWhisperMusic = true,
+	appliedCheckVoiceChatOnOff = false,
 	--appliedHitFxType = true,
 
 	-- 새로 생긴것
@@ -641,6 +646,8 @@ local chk_Option = {
 
 	savedCheckCombatMusic = CppEnums.BattleSoundType.Sound_Nomal,
 	savedCheckRiddingMusic = true,
+	savedCheckWhisperMusic = true,
+	savedCheckVoiceChatOnOff = false,
 
 	-- 새로 생긴것
 	savedCheckNameTag 				= false,
@@ -804,7 +811,8 @@ end
 local updateKeyConfig_UI = function()
 	for index = 0, keyConfigListShowCount_UI -1 do
 		local keyConfigData_UI = getKeyConfigData_UI(index)
-		if ( nil ~= keyConfigData_UI ) then
+
+		if ( nil ~= keyConfigData_UI and CppEnums.UiInputType.UiInputType_Cancel ~= index ) then
 			STATIC_INPUT_TITLE_UI[index]:SetText( keyConfigData_UI.titleText )
 			BUTTON_KEY_UI[index]:SetText( keyConfigData_UI.buttonKeyText )
 			BUTTON_PAD_UI[index]:SetText( keyConfigData_UI.padKeyText )
@@ -1041,6 +1049,7 @@ local simpleToolTipIdx =
 		_btn_GuideLineQuestObject	= 102,
 	-- }
 	_btn_IsOnScreenSaver		= 103,
+	_btn_WhisperOnOff			= 105,
 }
 
 local toolTipIdxValue =
@@ -1165,14 +1174,24 @@ local toolTipIdxValue =
 ------------------------------------------------------------------------------------------------
 -- 지역 변수
 ------------------------------------------------------------------------------------------------
-local maxScaleValue = 120;
+
 local minScaleValue = 50;
+local maxScaleValue = 120;
+
 local minScaleHeight = 720;
 local midleScaleHeight = 900;
+local HighScaleHeight = 1080;
+local MaxScaleHeight = 1600;
 
-local const_LowMaxScaleValue	= 90
-local const_MidleMaxScaleValue	= 100
-local const_HightMaxScaleValue	= 120
+local const_UiScaleValue =
+{
+	50,
+	90,
+	100,
+	120,
+	140,
+	200,
+}
 
 if false == isGameTypeThisCountry( CppEnums.ContryCode.eContryCode_KOR ) then
 	const_LowMaxScaleValue	= 100
@@ -1449,12 +1468,14 @@ function Panel_GameOption_Initialize()
 	frame_Sound._btn_EnvFXOnOff								:SetText( PAGetString(Defines.StringSheet_RESOURCE, "OPTION_TXT_ENVSOUNDTOGGLE") )
 	frame_Sound._btn_RiddingOnOff							:SetTextMode( UI_TM.eTextMode_LimitText )
 	frame_Sound._btn_RiddingOnOff							:SetText( PAGetString(Defines.StringSheet_RESOURCE, "PANEL_GAMEOPTION_SOUND_BTN_SERVANT") )
+	frame_Sound._btn_WhisperOnOff							:SetTextMode( UI_TM.eTextMode_LimitText )
+	frame_Sound._btn_WhisperOnOff							:SetText( PAGetString(Defines.StringSheet_RESOURCE, "PANEL_GAMEOPTION_SOUND_BTN_WHISPER") )
 	frame_Sound._btn_CombatAllwaysOff						:SetTextMode( UI_TM.eTextMode_LimitText )
-	frame_Sound._btn_CombatAllwaysOff						:SetText( PAGetString(Defines.StringSheet_RESOURCE, "RadioButton_AllwaysCombatOff") )
+	frame_Sound._btn_CombatAllwaysOff						:SetText( PAGetString(Defines.StringSheet_RESOURCE, "PANEL_GAMEOPTION_SOUND_BTN_COMBATTURNOFF") )
 	frame_Sound._btn_CombatAllwaysOn						:SetTextMode( UI_TM.eTextMode_LimitText )
 	frame_Sound._btn_CombatAllwaysOn						:SetText( PAGetString(Defines.StringSheet_RESOURCE, "PANEL_GAMEOPTION_SOUND_BTN_COMBATALLWAYS") )
 	frame_Sound._btn_CombatAllwaysLowOff					:SetTextMode( UI_TM.eTextMode_LimitText )
-	frame_Sound._btn_CombatAllwaysLowOff					:SetText( PAGetString(Defines.StringSheet_RESOURCE, "RadioButton_AllwaysCombatLowOff") )
+	frame_Sound._btn_CombatAllwaysLowOff					:SetText( PAGetString(Defines.StringSheet_RESOURCE, "PANEL_GAMEOPTION_SOUND_BTN_COMBATNORMAL") )
 --}
 	
 	-- 북미/ 유럽 국가에서만 채팅 필터링을 적용한다. 변경시 협의해야합니다.
@@ -2167,6 +2188,7 @@ function Option_RegistEventHandler()
 	frame_Sound._btn_EnvFXOnOff				:addInputEvent( "Mouse_LUp",  "GameOption_CheckEnvSound()" )
 
 	frame_Sound._btn_RiddingOnOff			:addInputEvent( "Mouse_LUp",  "GameOption_CheckRiddingMusic()" )
+	frame_Sound._btn_WhisperOnOff			:addInputEvent( "Mouse_LUp",  "GameOption_CheckWhisperMusic()" )
 
 	frame_Sound._btn_CombatAllwaysOff		:addInputEvent( "Mouse_LUp",	"GameOption_CheckCombatSound()")
 	frame_Sound._btn_CombatAllwaysOn		:addInputEvent( "Mouse_LUp",	"GameOption_CheckCombatSound()")
@@ -2688,8 +2710,9 @@ function InitGraphicOptionAll( gameOptionSetting, optionType )
 
 	local screenWidth =  gameOptionSetting:getScreenResolutionWidth()
 	local screenHeight = gameOptionSetting:getScreenResolutionHeight()
+		
 	local screenResolutionIdx = GameOption_FindScreenResolutionIdx( screenWidth, screenHeight )
-
+	
 	if screenResolutionIdx == 0 then
 		GameOption_InitScreenResolution( 0 ) 	-- 리스트에 있는 해상도가 아닌 경우에는 현재 해상도 그대로 출력 하도록 수정.
 		GameOption_SetScreenResolutionText_exception( screenWidth, screenHeight )
@@ -2774,13 +2797,15 @@ function InitGraphicOptionAll( gameOptionSetting, optionType )
 	local fovValue = gameOptionSetting:getFov()	-- 40 - 60 값으로 넘어옴
 	GameOption_InitFov( fovValue )
 	GameOption_SetFovValueText( fovValue )
-	
+		
 	--if(optionType == 1) then
 		-- UI 크기 설정
 		local uiScale			= gameOptionSetting:getUIScale()
 		uiScale = ((uiScale + 0.005) * 100 ) / 100
 		--  TODO : 수정할것
+	
 		uiScale = GameOption_InitScale( uiScale, screenHeight)
+				
 		GameOption_SetUIMode( uiScale )
 		setUIScale( uiScale );
 	--end
@@ -2802,8 +2827,10 @@ function InitSoundOptionAll( gameOptionSetting )
 	local otherplayerVolume = gameOptionSetting:getOtherPlayerVolume()
 	local combatMusic		= gameOptionSetting:getEnableBattleSoundType()
 	local riddingMusic		= gameOptionSetting:getEnableRidingSound()
+	local whisperMusic		= gameOptionSetting:getEnableWhisperSound()
+	local isVoiceChatOnOff	= false --gameOptionSetting:getVoiceChatOnOff()
 
-	GameOption_InitSound( enableMusic, enableSound, enableEnvSound, nil, masterVolume, fxVolume, dlgVolume, envVolume, musicVolume, hitFxWeight, otherplayerVolume, riddingMusic, combatMusic )
+	GameOption_InitSound( enableMusic, enableSound, enableEnvSound, nil, masterVolume, fxVolume, dlgVolume, envVolume, musicVolume, hitFxWeight, otherplayerVolume, riddingMusic, combatMusic, isVoiceChatOnOff, whisperMusic )
 	GameOption_SetVolumeText( masterVolume, fxVolume, dlgVolume, envVolume, musicVolume, hitFxVolume, hitFxWeight, otherplayerVolume )
 end
 
@@ -2901,32 +2928,34 @@ function Option_Init_KeyConfig_UI()
 	local padButtonPosY				= frame_Key_UI._button_Pad_Func1:GetPosY()
 
 	for ii = 0, keyConfigListShowCount_UI -1 do
-		if ( nil == STATIC_INPUT_TITLE_UI[ii] ) then
-			STATIC_INPUT_TITLE_UI[ii]	= UI.createControl( CppEnums.PA_UI_CONTROL_TYPE.PA_UI_CONTROL_STATICTEXT, 	_frameContent_KeyConfig_UI, "StaticText_InputTitle_" .. tostring(ii) )
-			CopyBaseProperty( frame_Key_UI._staticInputTitle_Func1, STATIC_INPUT_TITLE_UI[ii] )
-			STATIC_INPUT_TITLE_UI[ii]:SetIgnore( true )
-			STATIC_INPUT_TITLE_UI[ii]:SetShow( true )
-		end
-		if ( nil == BUTTON_KEY_UI[ii] ) then
-			BUTTON_KEY_UI[ii]			= UI.createControl( CppEnums.PA_UI_CONTROL_TYPE.PA_UI_CONTROL_RADIOBUTTON, 		_frameContent_KeyConfig_UI, "Button_Key_" .. tostring(ii) )
-			CopyBaseProperty( frame_Key_UI._button_key, BUTTON_KEY_UI[ii] )
-			BUTTON_KEY_UI[ii]:addInputEvent( "Mouse_LUp", "KeyCustom_UI_ButtonPushed_Key(" .. ii .. ")" )
-			BUTTON_KEY_UI[ii]:SetShow( true )
-		end
-		if ( nil == BUTTON_PAD_UI[ii] ) then
-			BUTTON_PAD_UI[ii]			= UI.createControl( CppEnums.PA_UI_CONTROL_TYPE.PA_UI_CONTROL_RADIOBUTTON, 		_frameContent_KeyConfig_UI, "Button_Pad_" .. tostring(ii) )
-			CopyBaseProperty( frame_Key_UI._button_Pad_Func1, BUTTON_PAD_UI[ii] )
-			BUTTON_PAD_UI[ii]:addInputEvent( "Mouse_LUp", "KeyCustom_UI_ButtonPushed_Pad(" .. ii .. ")" )
-			BUTTON_PAD_UI[ii]:SetShow( true )
-		end
+		if( CppEnums.UiInputType.UiInputType_Cancel ~= ii ) then
+			if ( nil == STATIC_INPUT_TITLE_UI[ii] ) then
+				STATIC_INPUT_TITLE_UI[ii]	= UI.createControl( CppEnums.PA_UI_CONTROL_TYPE.PA_UI_CONTROL_STATICTEXT, 	_frameContent_KeyConfig_UI, "StaticText_InputTitle_" .. tostring(ii) )
+				CopyBaseProperty( frame_Key_UI._staticInputTitle_Func1, STATIC_INPUT_TITLE_UI[ii] )
+				STATIC_INPUT_TITLE_UI[ii]:SetIgnore( true )
+				STATIC_INPUT_TITLE_UI[ii]:SetShow( true )
+			end
+			if ( nil == BUTTON_KEY_UI[ii] ) then
+				BUTTON_KEY_UI[ii]			= UI.createControl( CppEnums.PA_UI_CONTROL_TYPE.PA_UI_CONTROL_RADIOBUTTON, 		_frameContent_KeyConfig_UI, "Button_Key_" .. tostring(ii) )
+				CopyBaseProperty( frame_Key_UI._button_key, BUTTON_KEY_UI[ii] )
+				BUTTON_KEY_UI[ii]:addInputEvent( "Mouse_LUp", "KeyCustom_UI_ButtonPushed_Key(" .. ii .. ")" )
+				BUTTON_KEY_UI[ii]:SetShow( true )
+			end
+			if ( nil == BUTTON_PAD_UI[ii] ) then
+				BUTTON_PAD_UI[ii]			= UI.createControl( CppEnums.PA_UI_CONTROL_TYPE.PA_UI_CONTROL_RADIOBUTTON, 		_frameContent_KeyConfig_UI, "Button_Pad_" .. tostring(ii) )
+				CopyBaseProperty( frame_Key_UI._button_Pad_Func1, BUTTON_PAD_UI[ii] )
+				BUTTON_PAD_UI[ii]:addInputEvent( "Mouse_LUp", "KeyCustom_UI_ButtonPushed_Pad(" .. ii .. ")" )
+				BUTTON_PAD_UI[ii]:SetShow( true )
+			end
 
-		STATIC_INPUT_TITLE_UI[ii]:SetPosY( titleStaticPosY )
-		BUTTON_KEY_UI[ii]:SetPosY( keyButtonPosY )
-		BUTTON_PAD_UI[ii]:SetPosY( padButtonPosY )
+			STATIC_INPUT_TITLE_UI[ii]:SetPosY( titleStaticPosY )
+			BUTTON_KEY_UI[ii]:SetPosY( keyButtonPosY )
+			BUTTON_PAD_UI[ii]:SetPosY( padButtonPosY )
 
-		titleStaticPosY				= titleStaticPosY + adderPosY
-		keyButtonPosY				= keyButtonPosY + adderPosY
-		padButtonPosY				= padButtonPosY + adderPosY
+			titleStaticPosY				= titleStaticPosY + adderPosY
+			keyButtonPosY				= keyButtonPosY + adderPosY
+			padButtonPosY				= padButtonPosY + adderPosY
+		end
 	end
 
 	for index = INPUT_COUNT_START_UI , INPUT_COUNT_END_UI do
@@ -2985,12 +3014,22 @@ end
 function GameOption_InitScale( uiScale, screenHeight )
 
 	if( screenHeight <= minScaleHeight) then
-		maxScaleValue = const_LowMaxScaleValue;
+		minScaleValue = const_UiScaleValue[1];
+		maxScaleValue = const_UiScaleValue[2];
 	elseif( minScaleHeight < screenHeight and screenHeight <= midleScaleHeight ) then
-		maxScaleValue = const_MidleMaxScaleValue;
+		minScaleValue = const_UiScaleValue[1];
+		maxScaleValue = const_UiScaleValue[3];
+	elseif( midleScaleHeight < screenHeight and screenHeight <= HighScaleHeight ) then
+		minScaleValue = const_UiScaleValue[1];
+		maxScaleValue = const_UiScaleValue[4];
+	elseif( HighScaleHeight < screenHeight and screenHeight <= MaxScaleHeight ) then
+		minScaleValue = const_UiScaleValue[3];
+		maxScaleValue = const_UiScaleValue[5];
 	else
-		maxScaleValue = const_HightMaxScaleValue;
+		minScaleValue = const_UiScaleValue[5];
+		maxScaleValue = const_UiScaleValue[6];
 	end
+	
 	uiScale = math.floor( uiScale * 100 ) / 100
 	if( uiScale * 100 > maxScaleValue ) then
 		uiScale = 0.8
@@ -3126,12 +3165,22 @@ function GameOption_SetScreenResolutionText ( screenResolutionIdx )
 		frame_Display._btn_ScrSize:SetText( tostring ( screenResolution.width .." x " .. screenResolution.height ) )
 
 		if( screenResolution.height <= minScaleHeight ) then
-			maxScaleValue = const_LowMaxScaleValue;
+			minScaleValue = const_UiScaleValue[1];
+			maxScaleValue = const_UiScaleValue[2];
 		elseif( screenResolution.height <= midleScaleHeight ) then
-			maxScaleValue = const_MidleMaxScaleValue;
+			minScaleValue = const_UiScaleValue[1];
+			maxScaleValue = const_UiScaleValue[3];
+		elseif( screenResolution.height <= HighScaleHeight ) then
+			minScaleValue = const_UiScaleValue[1];
+			maxScaleValue = const_UiScaleValue[4];
+		elseif( screenResolution.height <= MaxScaleHeight ) then
+			minScaleValue = const_UiScaleValue[3];
+			maxScaleValue = const_UiScaleValue[5];
 		else
-			maxScaleValue = const_HightMaxScaleValue;
+			minScaleValue = const_UiScaleValue[5];
+			maxScaleValue = const_UiScaleValue[6];
 		end
+		
 --[[		
 		if (screenResolution.height < 768 ) then
 			_btn_UIScale:SetPosX(70)
@@ -3942,7 +3991,7 @@ end
 ------------------------------------------------------------
 --					        사운드 옵션 설정 관련
 ------------------------------------------------------------
-function GameOption_InitSound( enableMusic, enableSound, enableEnvSound, hitFxType, masterVolume, fxVolume, dlgVolume, envVolume, musicVolume, hitFxWeight, otherPlayerVolume, riddingMusic, combatMusic )
+function GameOption_InitSound( enableMusic, enableSound, enableEnvSound, hitFxType, masterVolume, fxVolume, dlgVolume, envVolume, musicVolume, hitFxWeight, otherPlayerVolume, riddingMusic, combatMusic, isVoiceChatOnOff, whisperMusic )
 	local self = chk_Option
 	--	save data
 	self.currentMaster = masterVolume
@@ -3981,6 +4030,10 @@ function GameOption_InitSound( enableMusic, enableSound, enableEnvSound, hitFxTy
 	self.appliedCheckRiddingMusic	= riddingMusic
 	self.savedCheckRiddingMusic		= riddingMusic
 
+	self.currentCheckWhisperMusic	= whisperMusic
+	self.appliedCheckWhisperMusic	= whisperMusic
+	self.savedCheckWhisperMusic		= whisperMusic
+
 	self.currentHitFxWeight			= hitFxWeight
 	self.appliedHitFxWeight			= hitFxWeight
 	self.savedHitFxWeight			= hitFxWeight
@@ -4006,6 +4059,7 @@ function GameOption_InitSound( enableMusic, enableSound, enableEnvSound, hitFxTy
 	frame_Sound._btn_EnvFXOnOff:SetCheck(enableEnvSound)
 
 	frame_Sound._btn_RiddingOnOff:SetCheck(riddingMusic)
+	frame_Sound._btn_WhisperOnOff:SetCheck(whisperMusic)
 
 	frame_Sound._btn_CombatAllwaysOff			:SetCheck( CppEnums.BattleSoundType.Sound_NotUse	== combatMusic )
 	frame_Sound._btn_CombatAllwaysOn			:SetCheck( CppEnums.BattleSoundType.Sound_Always	== combatMusic )
@@ -4150,6 +4204,13 @@ function GameOption_CheckRiddingMusic()
 	local self = chk_Option
 	local check = frame_Sound._btn_RiddingOnOff:IsCheck()
 	self.currentCheckRiddingMusic = check
+end
+
+function GameOption_CheckWhisperMusic()
+	ToClient_LuaDebugCallStack();
+	local self = chk_Option
+	local check = frame_Sound._btn_WhisperOnOff:IsCheck()
+	self.currentCheckWhisperMusic = check
 end
 
 function GameOption_CheckCombatSound()
@@ -5311,6 +5372,7 @@ function GameOption_UpdateOptionChanged()
 	--and self.currentHitFxType						== self.appliedHitFxType
 	and self.currentCheckCombatMusic				== self.appliedCheckCombatMusic
 	and self.currentCheckRiddingMusic				== self.appliedCheckRiddingMusic
+	and self.currentCheckWhisperMusic				== self.appliedCheckWhisperMusic
 	and self.currentCheckShowSkillCmd				== self.appliedCheckShowSkillCmd
 	and self.currentCheckAutoAim					== self.appliedCheckAutoAim
 	and self.currentCheckHideWindowByAttacked		== self.appliedCheckHideWindowByAttacked
@@ -5589,7 +5651,7 @@ function GameOption_Cancel()
 	or self.appliedCheckEnvSound ~= self.currentCheckEnvSound 
 	--or self.currentHitFxType ~= self.savedHitFxType
 	then
-		setEnableSound( self.appliedCheckSound, self.appliedCheckMusic, self.appliedCheckEnvSound, nil )							--	sendClient
+		setEnableSound( self.appliedCheckSound, self.appliedCheckMusic, self.appliedCheckEnvSound, self.appliedCheckWhisperMusic )							--	sendClient
 	end
 
 	if self.appliedCheckCombatMusic ~= self.currentCheckCombatMusic then
@@ -5598,6 +5660,14 @@ function GameOption_Cancel()
 
 	if self.appliedCheckRiddingMusic ~= self.currentCheckRiddingMusic then
 		setEnableRidingSound( self.appliedCheckRiddingMusic )
+	end
+
+	if self.appliedCheckWhisperMusic ~= self.currentCheckWhisperMusic then
+		setEnableSound( self.appliedCheckSound, self.appliedCheckMusic, self.appliedCheckEnvSound, self.appliedCheckWhisperMusic )
+	end
+	
+	if self.appliedCheckVoiceChatOnOff ~= self.currentCheckVoiceChatOnOff then
+		setEnableVoiceChatOnOff( self.appliedCheckVoiceChatOnOff )
 	end
 
 	---------------------------------------------------------------------------------------------
@@ -5928,7 +5998,7 @@ function GameOption_Apply()
 		self.appliedCheckEnvSound = self.currentCheckEnvSound
 		--self.appliedHitFxType = self.currentHitFxType
 
-		setEnableSound( self.appliedCheckSound, self.appliedCheckMusic, self.appliedCheckEnvSound, nil )	--	sendClient
+		setEnableSound( self.appliedCheckSound, self.appliedCheckMusic, self.appliedCheckEnvSound, self.appliedCheckWhisperMusic )	--	sendClient
 	end
 
 	if self.currentCheckShowSkillCmd		~= self.appliedCheckShowSkillCmd 	then
@@ -6181,21 +6251,27 @@ function GameOption_Apply()
 	-- 음악 옵션 
 	if self.currentCheckMusic						~= self.appliedCheckMusic then
 		self.appliedCheckMusic						= self.currentCheckMusic
-		setEnableSound( self.currentCheckSound, self.appliedCheckMusic, self.currentCheckEnvSound, nil )
+		setEnableSound( self.currentCheckSound, self.appliedCheckMusic, self.currentCheckEnvSound, self.currentCheckWhisperMusic )
 	end
 	-- 효과음 옵션
 	if self.currentCheckSound						~= self.appliedCheckSound then
 		self.appliedCheckSound						= self.currentCheckSound
-		setEnableSound( self.appliedCheckSound, self.currentCheckMusic, self.currentCheckEnvSound, nil )
+		setEnableSound( self.appliedCheckSound, self.currentCheckMusic, self.currentCheckEnvSound, self.currentCheckWhisperMusic )
 	end
 	-- 환경 효과음 옵션
 	if self.currentCheckEnvSound					~= self.appliedCheckEnvSound then
 		self.appliedCheckEnvSound				 	= self.currentCheckEnvSound
-		setEnableSound( self.currentCheckSound, self.currentCheckMusic, self.appliedCheckEnvSound, nil )
+		setEnableSound( self.currentCheckSound, self.currentCheckMusic, self.appliedCheckEnvSound, self.currentCheckWhisperMusic )
 	end
 	if self.currentCheckRiddingMusic				~= self.appliedCheckRiddingMusic then
 		self.appliedCheckRiddingMusic				= self.currentCheckRiddingMusic
 		setEnableRidingSound( self.appliedCheckRiddingMusic )
+	end
+	
+	-- 귓속말 음악
+	if self.currentCheckWhisperMusic				~= self.appliedCheckWhisperMusic then
+		self.appliedCheckWhisperMusic				= self.currentCheckWhisperMusic
+		setEnableSound( self.currentCheckSound, self.currentCheckMusic, self.appliedCheckEnvSound, self.currentCheckWhisperMusic )
 	end
 	-- 전투 음악 옵션
 	if self.currentCheckCombatMusic					~= self.appliedCheckCombatMusic then
@@ -6324,6 +6400,7 @@ function GameOption_ChangeDisplayApply()
 
 	self.savedCheckCombatMusic			= self.appliedCheckCombatMusic
 	self.savedCheckRiddingMusic			= self.appliedCheckRiddingMusic
+	self.savedCheckWhisperMusic			= self.appliedCheckWhisperMusic
 
 	self.savedCheckShowSkillCmd 		= self.appliedCheckShowSkillCmd
 
@@ -6477,11 +6554,11 @@ function GameOption_DefaultOption( gameOptionSetting, optionType )
 		chk_Option.currentCheckAA 				= gameOptionSetting:getAntiAliasing()
 		chk_Option.currentCheckUltra 			= gameOptionSetting:getGraphicUltra()
 		chk_Option.currentCheckLensBlood 		= gameOptionSetting:getLensBlood()
-		chk_Option.currentCheckBloodEffect 		= gameOptionSetting:getBloodEffect()
+		chk_Option.currentCheckBloodEffect 		= (0 ~= gameOptionSetting:getBloodEffect())
 		
 		chk_Option.currentCheckSSAO				= gameOptionSetting:getSSAO()
 		chk_Option.currentCheckTessellation		= gameOptionSetting:getTessellation()
-		chk_Option.currentCheckPostFilter		= gameOptionSetting:getPostFilter()
+		chk_Option.currentCheckPostFilter		= (0 ~= gameOptionSetting:getPostFilter())
 		chk_Option.currentCheckCharacterEffect	= gameOptionSetting:getCharacterEffect()
 		
 		chk_Option.currentCheckUIScale			= 1.0-- 왜 글로벌 스케일을 가져오게 했지..gameOptionSetting:getUIScale()
@@ -6640,6 +6717,8 @@ function GameOption_ResetSoundOption()
 	frame_Sound._btn_EnvFXOnOff:SetCheck( chk_Option.currentCheckEnvSound )
 	
 	frame_Sound._btn_RiddingOnOff:SetCheck( chk_Option.currentCheckRiddingMusic )
+
+	frame_Sound._btn_WhisperOnOff:SetCheck( chk_Option.currentCheckWhisperMusic )
 
 	local updateCombatSoundTarget = {
 		[CppEnums.BattleSoundType.Sound_NotUse]		= frame_Sound._btn_CombatAllwaysOff,

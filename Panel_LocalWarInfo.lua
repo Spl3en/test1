@@ -5,38 +5,38 @@ local UI_TM 		= CppEnums.TextMode
 
 Panel_LocalWarInfo:SetShow( false, false )
 
-Panel_LocalWarInfo:RegisterShowEventFunc( true, 'LocalWarInfoShowAni()' )
-Panel_LocalWarInfo:RegisterShowEventFunc( false, 'LocalWarInfoHideAni()' )
+-- Panel_LocalWarInfo:RegisterShowEventFunc( true, 'LocalWarInfoShowAni()' )
+-- Panel_LocalWarInfo:RegisterShowEventFunc( false, 'LocalWarInfoHideAni()' )
 
-function LocalWarInfoShowAni()
-	UIAni.fadeInSCR_Down( Panel_LocalWarInfo )
+-- function LocalWarInfoShowAni()
+-- 	UIAni.fadeInSCR_Down( Panel_LocalWarInfo )
 
-	local aniInfo1 = Panel_LocalWarInfo:addScaleAnimation( 0.0, 0.08, UI_ANI_ADV.PAUI_ANIM_ADVANCE_COS_HALF_PI)
-	aniInfo1:SetStartScale(0.5)
-	aniInfo1:SetEndScale(1.2)
-	aniInfo1.AxisX = Panel_LocalWarInfo:GetSizeX() / 2
-	aniInfo1.AxisY = Panel_LocalWarInfo:GetSizeY() / 2
-	aniInfo1.ScaleType = 2
-	aniInfo1.IsChangeChild = true
+-- 	local aniInfo1 = Panel_LocalWarInfo:addScaleAnimation( 0.0, 0.08, UI_ANI_ADV.PAUI_ANIM_ADVANCE_COS_HALF_PI)
+-- 	aniInfo1:SetStartScale(0.5)
+-- 	aniInfo1:SetEndScale(1.2)
+-- 	aniInfo1.AxisX = Panel_LocalWarInfo:GetSizeX() / 2
+-- 	aniInfo1.AxisY = Panel_LocalWarInfo:GetSizeY() / 2
+-- 	aniInfo1.ScaleType = 2
+-- 	aniInfo1.IsChangeChild = true
 	
-	local aniInfo2 = Panel_LocalWarInfo:addScaleAnimation( 0.08, 0.15, UI_ANI_ADV.PAUI_ANIM_ADVANCE_COS_HALF_PI)
-	aniInfo2:SetStartScale(1.2)
-	aniInfo2:SetEndScale(1.0)
-	aniInfo2.AxisX = Panel_LocalWarInfo:GetSizeX() / 2
-	aniInfo2.AxisY = Panel_LocalWarInfo:GetSizeY() / 2
-	aniInfo2.ScaleType = 2
-	aniInfo2.IsChangeChild = true
-end
-function LocalWarInfoHideAni()
-	local aniInfo1 = Panel_LocalWarInfo:addColorAnimation( 0.0, 0.1, UI_ANI_ADV.PAUI_ANIM_ADVANCE_SIN_HALF_PI)
-	aniInfo1:SetStartColor( UI_color.C_FFFFFFFF )
-	aniInfo1:SetEndColor( UI_color.C_00FFFFFF )
-	aniInfo1:SetStartIntensity( 3.0 )
-	aniInfo1:SetEndIntensity( 1.0 )
-	aniInfo1.IsChangeChild = true
-	aniInfo1:SetHideAtEnd(true)
-	aniInfo1:SetDisableWhileAni(true)
-end
+-- 	local aniInfo2 = Panel_LocalWarInfo:addScaleAnimation( 0.08, 0.15, UI_ANI_ADV.PAUI_ANIM_ADVANCE_COS_HALF_PI)
+-- 	aniInfo2:SetStartScale(1.2)
+-- 	aniInfo2:SetEndScale(1.0)
+-- 	aniInfo2.AxisX = Panel_LocalWarInfo:GetSizeX() / 2
+-- 	aniInfo2.AxisY = Panel_LocalWarInfo:GetSizeY() / 2
+-- 	aniInfo2.ScaleType = 2
+-- 	aniInfo2.IsChangeChild = true
+-- end
+-- function LocalWarInfoHideAni()
+-- 	local aniInfo1 = Panel_LocalWarInfo:addColorAnimation( 0.0, 0.1, UI_ANI_ADV.PAUI_ANIM_ADVANCE_SIN_HALF_PI)
+-- 	aniInfo1:SetStartColor( UI_color.C_FFFFFFFF )
+-- 	aniInfo1:SetEndColor( UI_color.C_00FFFFFF )
+-- 	aniInfo1:SetStartIntensity( 3.0 )
+-- 	aniInfo1:SetEndIntensity( 1.0 )
+-- 	aniInfo1.IsChangeChild = true
+-- 	aniInfo1:SetHideAtEnd(true)
+-- 	aniInfo1:SetDisableWhileAni(true)
+-- end
 
 local localWarInfo = {
 	_blackBG			= UI.getChildControl( Panel_LocalWarInfo, "Static_BlackBG"),
@@ -134,7 +134,6 @@ function LocalWarInfo_Initionalize()
 end
 
 function localWarInfo:Update()
-	local self = localWarInfo
 	for listIdx = 0, self._createListCount-1 do	-- 리스트 초기화.
 	-- for listIdx = 0, 15 do	-- 리스트 초기화.
 		local list = self._listPool[listIdx]
@@ -238,9 +237,9 @@ function localWarInfo:Update()
 		if 0 == inMyJoinState then
 			isMyChannelState = PAGetString(Defines.StringSheet_GAME, "LUA_LOCALWARINFO_WAITING") -- "대기중"
 		elseif 1 == inMyJoinState then
-			isMyChannelState = PAGetStringParam2( Defines.StringSheet_GAME, "LUA_LOCALWARINFO_TIME", "warTimeMinute", warTimeMinute, "warTimeSecond", Int64toInt32(warTimeSecond) )
+			isMyChannelState = PAGetStringParam2( Defines.StringSheet_GAME, "LUA_LOCALWARINFO_TIME", "warTimeMinute", inMyRemainTimeMinute, "warTimeSecond", Int64toInt32(inMyRemainTimeSecond) )
 		elseif 2 == inMyJoinState then
-			isMyChannelState = PAGetStringParam2( Defines.StringSheet_GAME, "LUA_LOCALWARINFO_TIME", "warTimeMinute", warTimeMinute, "warTimeSecond", Int64toInt32(warTimeSecond) )
+			isMyChannelState = PAGetStringParam2( Defines.StringSheet_GAME, "LUA_LOCALWARINFO_TIME", "warTimeMinute", inMyRemainTimeMinute, "warTimeSecond", Int64toInt32(inMyRemainTimeSecond) )
 		elseif 3 == inMyJoinState then
 			isMyChannelState = PAGetString(Defines.StringSheet_GAME, "LUA_LOCALWARINFO_FINISH")
 		end

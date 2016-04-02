@@ -258,7 +258,7 @@ local CharacterView = function( index, classType )
 		setWeatherTime(8 ,21)
 		viewCharacterFov(0.75)
 	elseif classType == UI_Class.ClassType_BladeMasterWomen then	-- 매화(여자 무사)
-		viewCharacter(index, -20, -45, -114, -0.1)
+		viewCharacter(index, -20, -25, -114, -0.1)
 		viewCharacterPitchRoll(-0.0, 0.0)
 		setWeatherTime(8 ,23)
 		viewCharacterFov(0.75)
@@ -882,6 +882,7 @@ end
 function CharacterSelect_PlayGame( index )
 	configData.selectCaracterIdx = index
 	local characterData = getCharacterDataByIndex( index )
+	local characterCount = getCharacterDataCount()
 	local serverUtc64 = getServerUtc64()
 	-- Panel_Lobby_Global_Variable.characterSelect = index
 	if ( nil ~= characterData ) then
@@ -889,7 +890,7 @@ function CharacterSelect_PlayGame( index )
 			or (getContentsServiceType() == CppEnums.ContentsServiceType.eContentsServiceType_OBT)
 			or (getContentsServiceType() == CppEnums.ContentsServiceType.eContentsServiceType_Commercial)
 		then
-			if 1 == characterData._level then
+			if 1 == characterData._level and 1 == characterCount then
 				FGlobal_FirstLogin_Open( index )
 			else
 				local pcDeliveryRegionKey = characterData._arrivalRegionKey

@@ -25,7 +25,11 @@ local AgreementGuild = {
 	
 	GuildMark_Wax	= UI.getChildControl( Panel_AgreementGuild, "Static_Wax" ),
 	GuildMark		= UI.getChildControl( Panel_AgreementGuild, "Static_GuildMark" ),
+
+	_frame			= UI.getChildControl( Panel_AgreementGuild, "Frame_1"),
 }
+_frame_Content	= UI.getChildControl( AgreementGuild._frame, "Frame_1_Content")
+_frame_Summary	= UI.getChildControl( _frame_Content, "StaticText_1")
 
 function AgreementGuildShowAni()
 end
@@ -59,6 +63,16 @@ function AgreementGuild:Initialize()
 
 	self.Content			:SetAutoResize( true )
 	self.Content			:SetTextMode( CppEnums.TextMode.eTextMode_AutoWrap )
+	_frame_Summary			:SetTextMode( CppEnums.TextMode.eTextMode_AutoWrap )
+	_frame_Summary:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_3") )
+	_frame_Content:SetSize(_frame_Content:GetSizeX(), _frame_Summary:GetTextSizeY() )
+	self._frame:UpdateContentPos()
+
+	if _frame_Content:GetSizeY() < self._frame:GetSizeY() then
+		self._frame:GetVScroll():SetShow( false )
+	else
+		self._frame:GetVScroll():SetShow( true )
+	end
 end
 
 local _signCheck	= false
@@ -86,6 +100,7 @@ function AgreementGuild:Update()
 	self.ContentTitle		:SetText( "[" .. inviteGuildName .. "] " .. PAGetString( Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_2" ) ) 		
 
 	self.Content			:SetText( PAGetString( Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_3" ) )
+	self.Content			:SetShow( false )
 	self.DailyPayment		:SetText( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_DAILYPAYMENT", "dailyPayment", dailyPayment ) )
 	-- "- 일일 급여 : " .. dailyPayment
 	self.Period				:SetText( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_PERIOD", "period", period ) )
@@ -121,7 +136,6 @@ function AgreementGuild:Update()
 		self.To				:SetText( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_GUILD_AGREEMENT_TO_DETAIL", "myName", myNick ) )
 		-- 가문명(캐릭터명) / "계약자 : "
 	-- end
-	
 end
 
 -- function AgreementGuild_Sign()

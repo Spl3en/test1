@@ -568,6 +568,12 @@ end
 
 function	InGameShopDetailInfo_Gift()
 	local	self	= inGameShopDetailInfo
+	local myLevel = getSelfPlayer():get():getLevel()
+	local limitLevel = 20
+	if myLevel < limitLevel and isGameTypeEnglish() then
+		Proc_ShowMessage_Ack( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_INGAMECASHSHOP_LIMIT_20LEVEL", "level", limitLevel ) ) -- "20레벨부터 선물하기가 가능합니다.")
+		return
+	end
 	
 	FGlobal_InGameShopBuy_Open( self._productNoRaw, true )
 end

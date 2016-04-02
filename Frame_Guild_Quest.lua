@@ -110,13 +110,34 @@ function GuildQuestInfoPage:initialize()
 	
 	-- 임무 목록 아래쪽 버튼 -------------------
 	
+	self._btnPreocc		:SetTextMode( UI_TM.eTextMode_LimitText )
+	self._btnWide		:SetTextMode( UI_TM.eTextMode_LimitText )
+	self._btnPreoccInfo	:SetTextMode( UI_TM.eTextMode_LimitText )
+	self._btnPreocc		:SetText( PAGetString(Defines.StringSheet_RESOURCE, "FRAME_GUILD_QUEST_BTN_LIST_PREOCC") )
+	self._btnWide		:SetText( PAGetString(Defines.StringSheet_RESOURCE, "FRAME_GUILD_QUEST_BTN_LIST_WIDE") )
+	self._btnPreoccInfo	:SetText( PAGetString(Defines.StringSheet_RESOURCE, "FRAME_GUILD_QUEST_BTN_LIST_PREOCCINFO") )
+
 	self._btnPreocc:addInputEvent("Mouse_LUp", "HandleClickedGuildPreQuest()" )
 	self._btnWide:addInputEvent("Mouse_LUp", "HandleClickedGuildWideQuest()" )
 	self._btnPreoccInfo:addInputEvent("Mouse_LUp", "HandleClickedGuildPreQuestInfo()" )
 	self._btnListLeft:addInputEvent("Mouse_LUp", "HandleClickedGuildQuestPrevPageMove()" )
 	self._btnListRight:addInputEvent("Mouse_LUp", "HandleClickedGuildQuestNextPageMove()" )
-	
+
+	if isGameTypeEnglish() then
+		self._btnPreocc:addInputEvent("Mouse_On", "GuildQuest_ButtonToolTip( true, 0 )" )
+		self._btnPreocc:addInputEvent("Mouse_Out", "GuildQuest_ButtonToolTip( false, 0 )" )
+		self._btnPreocc:setTooltipEventRegistFunc( "GuildQuest_ButtonToolTip( true, 0 )" )
+		self._btnWide:addInputEvent("Mouse_On", "GuildQuest_ButtonToolTip( true, 1 )" )
+		self._btnWide:addInputEvent("Mouse_Out", "GuildQuest_ButtonToolTip( false, 1 )" )
+		self._btnWide:setTooltipEventRegistFunc( "GuildQuest_ButtonToolTip( true, 1 )" )
+		self._btnPreoccInfo:addInputEvent("Mouse_On", "GuildQuest_ButtonToolTip( true, 2 )" )
+		self._btnPreoccInfo:addInputEvent("Mouse_Out", "GuildQuest_ButtonToolTip( false, 2 )" )
+		self._btnPreoccInfo:setTooltipEventRegistFunc( "GuildQuest_ButtonToolTip( true, 2 )" )
+	end
+
+	self._questCompleteAlert:SetTextMode( UI_TM.eTextMode_AutoWrap )
 	self._questCompleteAlert:SetText( PAGetString(Defines.StringSheet_GAME, "UI_GUILD_GUILDQUEST_COMPLETE" ) )
+	self._questCompleteAlert:SetSpanSize( self._questCompleteAlert:GetSpanSize().x, 590 )
 	self._questCompleteAlert:SetShow( true )
 	
 	--- 임무 목록 리스트-----------------------------
@@ -150,7 +171,7 @@ function GuildQuestInfoPage:initialize()
 		CopyBaseProperty(self._questIcon, 			rtGuildQuestListInfo._list_QuestIcon)
 		CopyBaseProperty(self._questIconBG, 		rtGuildQuestListInfo._list_QuestIconBG)
 			
-		rtGuildQuestListInfo._list_BG:SetPosY( 35 + pIndex * 90)
+		rtGuildQuestListInfo._list_BG:SetPosY( 35 + pIndex * 86)
 
 		rtGuildQuestListInfo._list_Title:SetSize( 450 ,rtGuildQuestListInfo._list_Title:GetSizeY() ) 
 		rtGuildQuestListInfo._list_Title:SetIgnore( false )
@@ -194,6 +215,29 @@ function GuildQuestInfoPage:initialize()
 	self._frameDefaultBG_Quest:MoveChilds(self._frameDefaultBG_Quest:GetID(), Panel_Guild_Quest)
 	UI.deletePanel(Panel_Guild_Quest:GetID())
 	Panel_Guild_Quest = nil
+end
+
+function GuildQuest_ButtonToolTip( isShow, tipType )
+	local name, desc, control = nil, nil, nil
+	local self = GuildQuestInfoPage
+
+	if 0 == tipType then
+		name	= PAGetString(Defines.StringSheet_RESOURCE, "FRAME_GUILD_QUEST_BTN_LIST_PREOCC")
+		control	= self._btnPreocc
+	elseif 1 == tipType then
+		name	= PAGetString(Defines.StringSheet_RESOURCE, "FRAME_GUILD_QUEST_BTN_LIST_WIDE")
+		control	= self._btnWide
+	elseif 2 == tipType then
+		name	= PAGetString(Defines.StringSheet_RESOURCE, "FRAME_GUILD_QUEST_BTN_LIST_PREOCCINFO")
+		control	= self._btnPreoccInfo
+	end
+
+	registTooltipControl(control, Panel_Tooltip_SimpleText)
+	if isShow == true then
+		TooltipSimple_Show( control, name, desc )
+	else
+		TooltipSimple_Hide()
+	end
 end
 
 -- 네비게이션

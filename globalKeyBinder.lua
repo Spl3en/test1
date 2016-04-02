@@ -175,6 +175,12 @@ local _keyBinder_Chatting = function()
 			FGlobal_MyIntroduceClearFocusEdit()
 		end
 		return true
+	elseif (FGlobal_ChattingFilter_UiEdit(uiEdit)) then
+		if GlobalKeyBinder_CheckKeyPressed( VCK.KeyCode_ESCAPE ) then
+			FGlobal_ChattingFilter_ClearFocusEdit()
+		end
+		return true
+
 	elseif (Panel_Knowledge_CheckCurrentUiEdit(uiEdit)) then
 		-- if GlobalKeyBinder_CheckKeyPressed( VCK.KeyCode_RETURN ) then
 		-- 	Panel_Knowledge_OutInputMode(true)
@@ -226,11 +232,7 @@ local _keyBinder_UIMode_CommonWindow = function( deltaTime )
 --지식 (H)
 	--if GlobalKeyBinder_CheckKeyPressed( VCK.KeyCode_H ) then
 	if GlobalKeyBinder_CheckCustomKeyPressed( CppEnums.UiInputType.UiInputType_MentalKnowledge ) then
-		if not IsSelfPlayerWaitAction() then	-- 카메라가 쫏아가지 못합니다.
-			Proc_ShowMessage_Ack( PAGetString(Defines.StringSheet_GAME, "LUA_CURRENTACTION_NOT_INTELLIGENTLIST") )
-		else
-			Panel_Knowledge_Show()
-		end
+		Panel_Knowledge_Show()
 		return
 	end
 	
@@ -1797,7 +1799,7 @@ function GlobalKeyBinder_Update( deltaTime )	-- 계속 돌면서 체크한다.
 				setInputMode( IM.eProcessorInputMode_UiModeNotInput )
 				noInputElapsedTime = 0.5
 			end
-			
+
 		elseif GlobalKeyBinder_CheckKeyPressed( VCK.KeyCode_ESCAPE ) then
 			Panel_NumberPad_ButtonCancel_Mouse_Click()
 		end
@@ -1854,6 +1856,11 @@ function GlobalKeyBinder_Update( deltaTime )	-- 계속 돌면서 체크한다.
 	 	end
 	elseif Panel_Chat_SubMenu:GetShow() then
 		if GlobalKeyBinder_CheckKeyPressed( VCK.KeyCode_ESCAPE ) then
+			if Panel_Chatting_Block_GoldSeller:GetShow() then
+				FGlobal_reportSeller_Close()
+				return
+			end
+
 			Panel_Chat_SubMenu:SetShow( false )
 			return
 		end

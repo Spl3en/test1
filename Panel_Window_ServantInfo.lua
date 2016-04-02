@@ -740,7 +740,7 @@ function ServantInfoUpdate( deltaTime )
 		end
 		
 		if isDiff then
-			ToClient_SaveVehicleEquipSlots()
+--			ToClient_SaveVehicleEquipSlots()
 		end
 	end
 end

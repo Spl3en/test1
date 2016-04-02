@@ -172,6 +172,7 @@ end
 
 -- 말 탔을 때, 내렸을 때 처리를 위한 펑션
 function SelfPlayer_RideOn()
+	HideUseTab_Func()
 	isRide = true
 end
 function SelfPlayer_RideOff()

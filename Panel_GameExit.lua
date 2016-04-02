@@ -967,7 +967,10 @@ function GameExitShowToggle( isAttacked )
 		return
 	end
 	
-	if GetUIMode() == Defines.UIMode.eUIMode_Gacha_Roulette then
+	local currentUIMode = GetUIMode()
+	if currentUIMode == Defines.UIMode.eUIMode_Gacha_Roulette 
+		or currentUIMode == Defines.UIMode.eUIMode_DeadMessage
+	then
 		return
 	end
 

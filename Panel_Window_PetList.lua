@@ -20,6 +20,81 @@ function PetNewListHideAni()
 end
 
 local marketTest = false 	-- ToClient_IsContentsGroupOpen( CppEnums.ContentsGroupType.ContentsGroupKey, 46 )	-- 펫 거래소
+local petSkillPlus = true	-- 펫 스킬 중복 들어가면 염
+local petComposeChange = true		-- 펫 교환 변경되면 들어감
+
+local petRaceCount =
+{
+	[1] = "고양이",
+	[2] = "개",
+	[3] = "매",
+	[4] = "펭귄",
+	[5] = "사막여우",
+	[6] = "고슴도치",	-- 일본
+	[7] = "눈사람",
+	[8] = "고슴도치",	-- 한국
+	[9] = "오목눈이",
+	[10] = "렛서팬더",
+}
+
+local checkUnSealList = {}
+local maxskillTypeCount = 15
+local skillTypeString =
+{
+	[0] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_0"), 			-- "- 성향 회복 증가 +",
+	[1] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_1"), 			-- "- 전투 경험치 증가 +",
+	[2] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_2"), 			-- "- 채집 경험치 증가 +",
+	[3] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_3"), 			-- "- 사망 페널티 감소 +",
+	[4] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_4"), 			-- "- 낚시 경험치 증가 +",
+	[5] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_5"), 			-- "- 수렵 경험치 증가 +",
+	[6] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_6"),	 		-- "- 요리 경험치 증가 +",
+	[7] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_7"), 			-- "- 연금 경험치 증가 +",
+	[8] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_8"), 			-- "- 가공 경험치 증가 +",
+	[9] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_9"), 			-- "- 조련 경험치 증가 +",
+	[10] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_10"), 		-- "- 무역 경험치 증가 +",
+	[11] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_11"), 		-- "- 재배 경험치 증가 +",
+	[12] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_12"), 		-- "- 잠재력 행운 증가 +",
+	[13] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_13"), 		-- "- 잠재력 낚시 증가 +",
+	[14] = PAGetString(Defines.StringSheet_GAME, "LUA_PETSKILLTYPE_14"), 		-- "- 잠재력 채집 증가 +",
+}
+local plusPoint =
+{
+	[0] = 7,
+	[1] = 5,
+	[2] = 3,
+	[4] = 4
+}
+local skillInfo =
+{
+	plusCount = {},
+	skillTypeCount = {}
+}
+
+local petSkillList =
+{
+	window		= UI.getChildControl( Panel_Window_PetListNew, "Static_SkillListWindow" ),
+	title		= UI.getChildControl( Panel_Window_PetListNew, "StaticText_SkillListTitle" ),
+	subTitle	= UI.getChildControl( Panel_Window_PetListNew, "StaticText_SkillList_Title" ),
+	bg1			= UI.getChildControl( Panel_Window_PetListNew, "Static_SkillListBG" ),
+	textList	= UI.getChildControl( Panel_Window_PetListNew, "StaticText_SkillList" ),
+	bg2			= UI.getChildControl( Panel_Window_PetListNew, "Static_SkillListBG2" ),
+	desc		= UI.getChildControl( Panel_Window_PetListNew, "StaticText_SkillListDesc" ),
+}
+
+function petSkillList_Show()
+	if not petSkillPlus then
+		return
+	end
+	for key, control in pairs ( petSkillList ) do
+		control:SetShow( true )
+	end
+end
+function petSkillList_Close()
+	for key, control in pairs ( petSkillList ) do
+		control:SetShow( false )
+	end
+end
+petSkillList_Close()
 
 -- 펫 최대 소환수는 ContentsOption에서 가져와서 사용한다
 local maxUnsealCount = ToClient_getPetUseMaxCount()
@@ -30,6 +105,7 @@ local petComposeNo =
 	[0]	= nil,
 	[1] = nil
 }
+local composePetTier = 0			-- 기본 펫 티어 초기화
 local PetList = {
 	panelBG			= UI.getChildControl( Panel_Window_PetListNew, "Static_BG" ),
 	scroll			= UI.getChildControl( Panel_Window_PetListNew, "Scroll_PetListNew" ),
@@ -37,11 +113,11 @@ local PetList = {
 	noneUnsealPet	= UI.getChildControl( Panel_Window_PetListNew, "StaticText_NoneUnsealPet" ),
 	-- BTN_UnSeal		= UI.getChildControl( Panel_Window_PetListNew, "Button_UnSeal"),
 	BTN_Compose		= UI.getChildControl( Panel_Window_PetListNew, "Button_Compose" ),
-	BTN_AllUnSeal	= UI.getChildControl( Panel_Window_PetListNew, "Button_AllUnSeal"),
+	BTN_AllUnSeal	= UI.getChildControl( Panel_Window_PetListNew, "Button_AllUnSeal"),	-- 모두 맡기기
+	BTN_AllSeal		= UI.getChildControl( Panel_Window_PetListNew, "Button_AllSeal"),	-- 모두 찾기
 	BTN_Market		= UI.getChildControl( Panel_Window_PetListNew, "Button_Market" ),
 
 	TXT_HungryAlert	= UI.getChildControl( Panel_Window_PetControl, "StaticText_HungryAlert"),
-
 
 	scrollInterval	= 0,
 	startIndex		= 0,
@@ -74,6 +150,7 @@ local Template = {
 	button_UnSeal				= UI.getChildControl( Panel_Window_PetListNew, "Template_Button_Unseal"),
 	button_UnSealAll			= UI.getChildControl( Panel_Window_PetListNew, "Template_Button_UnsealAll"),
 	button_Fusion				= UI.getChildControl( Panel_Window_PetListNew, "Template_Button_Fusion" ),
+	check_AllSeal				= UI.getChildControl( Panel_Window_PetListNew, "Template_CheckButton_AllSeal"),
 }
 
 for v, control in pairs(Template) do
@@ -97,10 +174,49 @@ local petCompose =
 	btn_No			= UI.getChildControl( Panel_Window_PetCompose, "Button_No" ),
 	
 	btn_Question	= UI.getChildControl( Panel_Window_PetCompose, "Button_Question" ),
+
 	
+	petComposeSkillDesc = UI.getChildControl( Panel_Window_PetCompose, "StaticText_SkillDesc" ),
+	composePetBg_1		= UI.getChildControl( Panel_Window_PetCompose, "Static_SelectSlotBg_1" ),
+	composePetBg_2		= UI.getChildControl( Panel_Window_PetCompose, "Static_SelectSlotBg_2" ),
+	composePetBg_3		= UI.getChildControl( Panel_Window_PetCompose, "Static_NoneSlotBg" ),
+	
+	composePetSlot_1	= UI.getChildControl( Panel_Window_PetCompose, "Static_SelectPetSlot_1" ),
+	composePetSlot_2	= UI.getChildControl( Panel_Window_PetCompose, "Static_SelectPetSlot_2" ),
+	composePetSlot_3	= UI.getChildControl( Panel_Window_PetCompose, "Static_SelectPetSlot_None" ),
+	
+	radioBtn_Pet_1		= UI.getChildControl( Panel_Window_PetCompose, "RadioButton_Skill_1" ),
+	radioBtn_Pet_2		= UI.getChildControl( Panel_Window_PetCompose, "RadioButton_Skill_2" ),
+	radioBtn_Pet_3		= UI.getChildControl( Panel_Window_PetCompose, "RadioButton_Skill_None" ),
+	noneSlotDesc		= UI.getChildControl( Panel_Window_PetCompose, "StaticText_NoneSlot_Desc" ),
+	
+	skillTitle		= UI.getChildControl( Panel_Window_PetCompose, "StaticText_SkillTitle" ),
+	skillBg			= UI.getChildControl( Panel_Window_PetCompose, "Static_SkillBg" ),
+	skillSlotBg		= {
+		[1] = UI.getChildControl( Panel_Window_PetCompose, "Static_SkillBg_1" ),
+		[2] = UI.getChildControl( Panel_Window_PetCompose, "Static_SkillBg_2" ),
+		[3] = UI.getChildControl( Panel_Window_PetCompose, "Static_SkillBg_3" ),
+	},
+	skillSlot		= {
+		[1] = UI.getChildControl( Panel_Window_PetCompose, "Static_SkillSlot_1" ),
+		[2] = UI.getChildControl( Panel_Window_PetCompose, "Static_SkillSlot_2" ),
+		[3] = UI.getChildControl( Panel_Window_PetCompose, "Static_SkillSlot_3" ),
+	},
+	
+
+	skillNoList		= { [0] = nil, nil, nil, nil, nil, nil },
+	preserveSkillNo	= nil,
 	petComposeNo	= { [1] = nil, nil },
-	race			= nil
+	race			= nil,
 }
+
+petCompose.composePetSlot_1:addInputEvent( "Mouse_LUp", "InheritPetSkill_Pet(" .. 1 .. ")" )
+petCompose.composePetSlot_2:addInputEvent( "Mouse_LUp", "InheritPetSkill_Pet(" .. 2 .. ")" )
+petCompose.composePetSlot_3:addInputEvent( "Mouse_LUp", "InheritPetSkill_Pet(" .. 3 .. ")" )
+
+petCompose.radioBtn_Pet_1:addInputEvent( "Mouse_LUp", "PetCompose_UpdatePetSkillList()" )
+petCompose.radioBtn_Pet_2:addInputEvent( "Mouse_LUp", "PetCompose_UpdatePetSkillList()" )
+petCompose.radioBtn_Pet_3:addInputEvent( "Mouse_LUp", "PetCompose_UpdatePetSkillList()" )
 
 petCompose.btn_Question	:addInputEvent( "Mouse_LUp", "Panel_WebHelper_ShowToggle( \"Pet\" )" )					-- 물음표 좌클릭
 petCompose.btn_Question	:addInputEvent( "Mouse_On", "HelpMessageQuestion_Show( \"Pet\", \"true\")" )				-- 물음표 마우스오버
@@ -108,11 +224,21 @@ petCompose.btn_Question	:addInputEvent( "Mouse_Out", "HelpMessageQuestion_Show( 
 petCompose.btn_Yes		:addInputEvent( "Mouse_LUp", "Confirm_PetCompose()" )
 petCompose.btn_No		:addInputEvent( "Mouse_LUp", "Panel_Window_PetCompose_Close()" )
 petCompose.editName		:addInputEvent( "Mouse_LUp", "HandleClicked_PetCompose_ClearEdit()" )
+
 local petComposeString	= PAGetString(Defines.StringSheet_GAME, "PANEL_PETLIST_PETCOMPOSE_NAME")			-- "애완동물 이름을 정해주세요"
 local petComposeDesc	= PAGetString(Defines.StringSheet_GAME, "PANEL_PETLIST_PETCOMPOSE_DESC")
--- 1. 애완동물 두 마리를 좀 더 유용한 애완동물 한 마리로 교환할 수 있습니다.\n2. 교환한 애완동물은 기존 두 마리의 외형을 물려받습니다.\n3. 또한 스킬 사용이 가능해 좀 더 유용합니다.\n4. 교환할 애완동물의 레벨이 높을수록 높은 등급의 결과물이 잘 나옵니다.
+if not petComposeChange then
+	petComposeDesc = "1. 애완동물 두 마리를 교환하여 새로운 애완동물로 교환 가능합니다.\n2. 교환한 애완동물은 기존 두 마리의 외형을 물려받습니다.\n3. 교환할 애완동물의 레벨이 높을수록 높은 등급의 결과물이 잘 나옵니다.\n4. 다른 종의 애완동물끼리 교환은 불가능 합니다.\n<PAColor0xFFDB2B2B>5. 효과와 수치가 동일한 기술은 애완동물끼리 중복 적용 받을 수 없습니다.<PAOldColor>\n<PAColor0xFFDB2B2B>6. 교환시 애완동물이 보유한 특기와 기술은 변동될 수 있습니다.<PAOldColor>"
+end
+local petSkillNoneDesc	= PAGetString(Defines.StringSheet_GAME, "PANEL_TOOLTIP_NOTHING")
 
-petCompose.desc			:SetText( petComposeDesc )
+-- 1. 애완동물 두 마리를 좀 더 유용한 애완동물 한 마리로 교환할 수 있습니다.\n2. 교환한 애완동물은 기존 두 마리의 외형을 물려받습니다.\n3. 또한 스킬 사용이 가능해 좀 더 유용합니다.\n4. 교환할 애완동물의 레벨이 높을수록 높은 등급의 결과물이 잘 나옵니다.
+if petCompose.desc ~= nil then
+	petCompose.desc			:SetText( petComposeDesc )
+end
+if petCompose.descSkillNone ~= nil then
+	petCompose.descSkillNone:SetText( petSkillNoneDesc )
+end
 
 function PetList:Initialize()
 	local itemList_PosY = 5
@@ -248,6 +374,13 @@ function PetList:Initialize()
 		Created_BTNFusion:SetPosY( 10 )
 		Created_BTNFusion:SetShow( false )
 		tempSlot.BTNFusion = Created_BTNFusion
+
+		local Created_CHKAllSeal = UI.createControl( UI_PUCT.PA_UI_CONTROL_CHECKBUTTON, Created_ListContentBG, 'PetListNew_PetCHKAllSeal_' .. listIdx )
+		CopyBaseProperty( Template.check_AllSeal, Created_CHKAllSeal )
+		Created_CHKAllSeal:SetPosX( 5 )
+		Created_CHKAllSeal:SetPosY( 32 )
+		Created_CHKAllSeal:SetShow( false )
+		tempSlot.CHKAllSeal = Created_CHKAllSeal
 		
 		itemList_PosY	= itemList_PosY + Created_ListContentBG:GetSizeY() + 5
 		
@@ -256,17 +389,27 @@ function PetList:Initialize()
 			Created_BTNUnSeal:SetPosX( 300 )
 			Created_BTNFusion:SetPosX( 260 )
 		end
-
-		if isGameTypeEnglish() then
-			PetList.BTN_Compose:SetShow( false )
-		else
-			PetList.BTN_Compose:SetShow( true )
-			PetList.BTN_Compose		:SetSpanSize( -120, 7 )
-			PetList.BTN_AllUnSeal	:SetSpanSize( 0, 7 )
-		end
 		
 		self.listUIPool[listIdx] = tempSlot
 	end
+
+
+
+		local btnComposeSizeX			= PetList.BTN_Compose:GetSizeX()+23
+		local btnComposeTextPosX		= (btnComposeSizeX - (btnComposeSizeX/2) - ( PetList.BTN_Compose:GetTextSizeX() / 2 ))
+		local btnAllUnSealSizeX			= PetList.BTN_AllUnSeal:GetSizeX()+23
+		local btnAllUnSealTextPosX		= (btnAllUnSealSizeX - (btnAllUnSealSizeX/2) - ( PetList.BTN_AllUnSeal:GetTextSizeX() / 2 ))
+		local btnAllSealSizeX			= PetList.BTN_AllSeal:GetSizeX()+23
+		local btnAllSealTextPosX		= (btnAllSealSizeX - (btnAllSealSizeX/2) - ( PetList.BTN_AllSeal:GetTextSizeX() / 2 ))
+
+
+		PetList.BTN_Compose				:SetTextSpan( btnComposeTextPosX, 5 )
+		PetList.BTN_AllUnSeal			:SetTextSpan( btnAllUnSealTextPosX, 5 )
+		PetList.BTN_AllSeal				:SetTextSpan( btnAllSealTextPosX, 5 )
+		PetList.BTN_Compose:SetShow( true )
+		PetList.BTN_Compose		:SetSpanSize( -120, 7 )
+		PetList.BTN_AllUnSeal	:SetSpanSize( 0, 7 )
+		PetList.BTN_AllSeal		:SetSpanSize( 120, 7 )
 end
 
 function PetList:SetScroll()
@@ -283,8 +426,8 @@ function PetList:SetScroll()
 	local scrollSizeY		= self.scroll:GetSizeY()
 	local btn_scrollSizeY	= ( scrollSizeY / 100 ) * pagePercent
 
-	if btn_scrollSizeY < 10 then
-		btn_scrollSizeY = 10
+	if btn_scrollSizeY < 50 then
+		btn_scrollSizeY = 50
 	end
 	if scrollSizeY <= btn_scrollSizeY then
 		btn_scrollSizeY = scrollSizeY * 0.99
@@ -322,6 +465,7 @@ function PetList:Update( startIdx )
 			self.noneUnsealPet					:SetShow( true )
 			self.noneUnsealPet					:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_PETLIST_TEXT_HAVENOTPET") ) -- "찾은 애완동물이 없습니다."
 			self.listUIPool[0].ListContentBG	:SetShow( true )
+			petSkillList_Close()
 			return											-- 가진 펫이 없으므로 리턴
 		elseif 0 == self.UnSealDATACount then
 			self.noneUnsealPet					:SetShow( true )
@@ -331,6 +475,7 @@ function PetList:Update( startIdx )
 			end
 			self.listUIPool[0].ListContentBG	:SetShow( true )
 			petControlCount = havePetCount + 1				-- 펫 정보 이외의 콘트롤이 하나 생성되므로 +1을 해줌
+			petSkillList_Close()
 		else
 			self.noneUnsealPet					:SetShow( false )
 		end
@@ -342,7 +487,7 @@ function PetList:Update( startIdx )
 	if self.listMaxCount <= limitIndex then
 		limitIndex = self.listMaxCount
 	end
-	
+
 	local hungryAlert = false
 	for petIndex = 0, limitIndex - 1 do
 		local uiIndex			= 0
@@ -368,6 +513,9 @@ function PetList:Update( startIdx )
 			else
 				petData[petIndex]	= ToClient_getPetSealedDataByIndex( petIndex - self.UnSealDATACount + startIdx )		-- ToClient 함수 인덱스가 startIdx부터 시작돼야 함
 			end
+			if nil == petData[petIndex] then
+				return
+			end
 			petStaticStatus		= petData[petIndex]:getPetStaticStatus()
 			iconPath			= petData[petIndex]:getIconPath()
 			petNo_s64			= petData[petIndex]._petNo
@@ -382,6 +530,9 @@ function PetList:Update( startIdx )
 			petTier				= petStaticStatus:getPetTier() + 1			-- 0세대부터 시작하므로 +1을 해준다
 		else
 			petData[petIndex]	= ToClient_getPetUnsealedDataByIndex( petIndex + startIdx )		-- ToClient 함수 인덱스가 startIdx부터 시작돼야 함
+			if nil == petData[petIndex] then
+				return
+			end
 			petStaticStatus		= petData[petIndex]:getPetStaticStatus()
 			iconPath			= petData[petIndex]:getIconPath()
 			petNo_s64			= petData[petIndex]:getPcPetNo()
@@ -404,19 +555,6 @@ function PetList:Update( startIdx )
 			hungryAlert = false
 		end
 		
-		local isCat, isDog, isHawk, isPenguin, isFox = false, false, false, false, false
-		if 1 == petRace then
-			isCat = true
-		elseif 2 == petRace then
-			isDog = true
-		elseif 3 == petRace then
-			isHawk = true
-		elseif 4 == petRace then
-			isPenguin = true
-		elseif 5 == petRace then				-- 사막여우 교배 데이터 들어갈 때까지 막아둠!
-			isFox = true
-		end
-		
 		-- 펫 애정도
 		local lovelyPercent		= 0
 		if 0 ~= petLovely then
@@ -435,6 +573,7 @@ function PetList:Update( startIdx )
 		UiBase.PetHungry			:SetShow( true )
 		UiBase.PetHungryProgressBG	:SetShow( true )
 		UiBase.PetHungryProgress	:SetShow( true )
+		UiBase.CHKAllSeal			:SetShow( false )
 		
 		UiBase.PetIcon				:ChangeTextureInfoName( iconPath )
 		UiBase.PetLev				:SetText( "Lv." .. petLevel )
@@ -446,15 +585,24 @@ function PetList:Update( startIdx )
 			UiBase.BTNInfo		:SetShow( false )
 			UiBase.BTNUnSeal	:SetShow( false )
 			UiBase.BTNUnSealAll	:SetShow( false )
-			UiBase.BTNSeal		:SetShow( true )
+			UiBase.BTNSeal		:SetShow( true and not Panel_Window_PetCompose:GetShow() )
 			UiBase.BTNRegist	:SetShow( marketTest )
 			UiBase.BTNFusion	:SetShow( false )
-			
+			UiBase.CHKAllSeal	:SetShow( true )
+
+			if nil == checkUnSealList[Int64toInt32(petNo_s64)] then
+				checkUnSealList[Int64toInt32(petNo_s64)] = false
+			end
+
+			local isCheck = checkUnSealList[Int64toInt32(petNo_s64)]
+			UiBase.CHKAllSeal:SetCheck( isCheck )
+
+			local petComposable = math.abs(petTier - composePetTier) < 2			-- 2티어 이상 차이나는 펫은 교배할 수 없다
 			if nil ~= petComposeNo[1] then
 				UiBase.BTNFusion	:SetShow( false )
-			elseif petNo_s64 ~= petComposeNo[0] and nil ~= petComposeNo[0] and ( petCompose._race == petRace ) then
+			elseif petNo_s64 ~= petComposeNo[0] and nil ~= petComposeNo[0] and ( petCompose._race == petRace ) and petComposable then
 				UiBase.BTNFusion	:SetShow( true )
-			elseif nil == petComposeNo[0] and true == CheckCompose() and ( petRace <= 7 ) then 
+			elseif nil == petComposeNo[0] and true == CheckCompose() and ( petRace <= #petRaceCount ) then 
 				UiBase.BTNFusion	:SetShow( true )
 			end
 		else
@@ -464,15 +612,22 @@ function PetList:Update( startIdx )
 			UiBase.BTNSeal		:SetShow( false )
 			UiBase.BTNFusion	:SetShow( false )
 			UiBase.BTNRegist	:SetShow( false )
+			UiBase.CHKAllSeal	:SetShow( false )
 		end
+
+		-- PetList.BTN_AllSeal				:SetIgnore( Panel_Window_PetCompose:GetShow() )
+		-- PetList.BTN_AllSeal				:SetMonoTone( Panel_Window_PetCompose:GetShow() )
+		-- PetList.BTN_AllUnSeal			:SetIgnore( Panel_Window_PetCompose:GetShow() )
+		-- PetList.BTN_AllUnSeal			:SetMonoTone( Panel_Window_PetCompose:GetShow() )
 			
 		-- UiBase.BTNUnregister	:SetShow( false ) 				-- 고양이는 유료캐쉬템이기 때문에 놓아주기 버튼을 노출시키지 않는다.
-		UiBase.BTNInfo			:addInputEvent( "Mouse_LUp", "petListNew_ShowInfo	( \"" .. tostring(petNo_s64) .. "\" )")
-		UiBase.BTNUnSeal		:addInputEvent( "Mouse_LUp", "petListNew_Seal		( \"" .. tostring(petNo_s64) .. "\" ," .. uiIndex .. ")")
-		UiBase.BTNUnSealAll		:addInputEvent( "Mouse_LUp", "FGlobal_HandleClicked_petControl_AllSeal()")
+		UiBase.BTNInfo			:addInputEvent( "Mouse_LUp", "petListNew_ShowInfo	( \"" .. tostring(petNo_s64) .. "\" )" )
+		UiBase.BTNUnSeal		:addInputEvent( "Mouse_LUp", "petListNew_Seal		( \"" .. tostring(petNo_s64) .. "\" ," .. uiIndex .. ")" )
+		UiBase.BTNUnSealAll		:addInputEvent( "Mouse_LUp", "FGlobal_HandleClicked_petControl_AllUnSeal()")
 		UiBase.BTNSeal			:addInputEvent( "Mouse_LUp", "petListNew_UnSeal		( \"" .. tostring(petNo_s64) .. "\" )" )		-- petNo
 		UiBase.BTNRegist		:addInputEvent( "Mouse_LUp", "petListNew_Regist		( \"" .. tostring(petNo_s64) .. "\" )" )		-- petNo
 		UiBase.BTNFusion		:addInputEvent( "Mouse_LUp", "petListNew_Compose_Set( \"" .. tostring(petNo_s64) .. "\" ," .. petRace .. " )" )		-- petNo
+		UiBase.CHKAllSeal		:addInputEvent( "Mouse_LUp", "petListNew_AllSealCheck( " .. Int64toInt32(petNo_s64) .. "," .. uiIndex .. ")" )		-- petNo
 		
 		-- if 2 == petState then		-- 거래소 등록 중이면(아직 거래소가 출시안됬지만 라이브에 거래소 등록중 노출되는 버그가 있어서 주석처리한다.2015-11-08)
 		-- 	UiBase.BTNInfo		:SetShow( false )
@@ -496,7 +651,140 @@ function PetList:Update( startIdx )
 		-- self.TXT_HungryAlert:SetShow( false )
 		-- Panel_Party:SetSpanSize( 10, 280 )
 	-- end
+	
+	-- 펫 스킬 수치 합산
+	skillTypeCount_Init()
+	if not CheckCompose() then
+		AmountPetSkill_Attribute( self.UnSealDATACount )
+	end
+end
+
+function AmountPetSkill_Attribute( count )
+	local skillMaxCount = ToClient_getPetEquipSkillMax()
+	if 0 < count then
+		for index = 0, count - 1 do
+			local PcPetData = ToClient_getPetUnsealedDataByIndex( index )
+			if nil == PcPetData then
+				return
+			end
+			for skill_idx = 0, skillMaxCount - 1 do
+				local skillStaticStatus = ToClient_getPetEquipSkillStaticStatus( skill_idx )
+				local isLearn = PcPetData:isPetEquipSkillLearned( skill_idx )
+				if true == isLearn and nil ~= skillStaticStatus then
+					local skillTypeStaticWrapper = skillStaticStatus:getSkillTypeStaticStatusWrapper()
+					if nil ~= skillTypeStaticWrapper then
+						PetSkillTypeCheck1( skill_idx )
+					end
+				end
+			end
+		end
+	
+		local petSkillGrade = ""
+		local petSkillGradeText = ""
+		local hasSkill = false
+		for skillTypeIndex = 0, maxskillTypeCount -1 do
+			if 0 < skillInfo.plusCount[skillTypeIndex] then
+				if skillTypeIndex < 12 then
+					petSkillGrade = "%"
+				else
+					petSkillGrade = PAGetString(Defines.StringSheet_GAME, "LUA_CHARACTERINFO_TEXT_POTENLEVEL")	 -- "단계"
+				end
+				if "" == petSkillGradeText then
+					petSkillGradeText = skillTypeString[skillTypeIndex] .. skillInfo.plusCount[skillTypeIndex] .. petSkillGrade
+				else
+					petSkillGradeText = petSkillGradeText .. "\n" .. skillTypeString[skillTypeIndex] .. skillInfo.plusCount[skillTypeIndex] .. petSkillGrade
+				end
+				hasSkill = true
+			end
+		end
 		
+		if hasSkill then
+			local self = petSkillList
+			petSkillList_Show()
+			self.textList:SetText( petSkillGradeText )
+			local textSizeY = self.textList:GetTextSizeY()
+			self.bg1:SetSize( self.bg1:GetSizeX(), textSizeY + 10 )
+			self.bg2:SetPosY( self.bg1:GetPosY() + textSizeY + 15 )
+			self.desc:SetPosY( self.bg1:GetPosY() + textSizeY + 30 )
+			self.window:SetSize( self.window:GetSizeX(), self.bg2:GetPosY() + 60 )
+		else
+			petSkillList_Close()
+		end
+	else
+		petSkillList_Close()
+	end
+	
+end
+
+-- 0 성향치, 1 전투 경험치, 2 채집 경험치, 3 사망 페널티, 4 낚시 경험치, 5 수렵 경험치, 6 요리 경험치, 7 연금 경험치, 8 가공 경험치, 9 조련 경험치, 10 무역 경험치, 11 재배 경험치
+-- % 맥스는 15, 단계는 1단계가 최대!!!
+local maxPercentage = ToClient_MaxPetSkillRate()/10000		-- 꺼낸 펫들의 최대 중첩 스킬 적용치(한국은 일단 20%, 국가별로 다름. 컨텐츠옵션 localizingoption에 있음)
+local maxGrade = 5			-- 잠재력 중첩 가능
+function PetSkillTypeCheck1( skillIndex )
+	local self = skillInfo
+	local skillType = nil
+	if 0 <= skillIndex and skillIndex < 3 then
+		skillType = 0
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[skillIndex], maxPercentage)
+	elseif 3 <= skillIndex and skillIndex < 6 then
+		skillType = 1
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[skillIndex%3], maxPercentage)
+	elseif 6 <= skillIndex and skillIndex < 9 then
+		skillType = 2
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[skillIndex%3], maxPercentage)
+	elseif 12 == skillIndex then
+		skillType = 3
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[0], maxPercentage)
+	elseif 13 == skillIndex then
+		skillType = 3
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[4], maxPercentage)
+	elseif 14 <= skillIndex and skillIndex < 17 then
+		skillType = 4
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[(skillIndex+1)%3], maxPercentage)
+	elseif 17 <= skillIndex and skillIndex < 20 then
+		skillType = 5
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[(skillIndex+1)%3], maxPercentage)
+	elseif 20 <= skillIndex and skillIndex < 23 then
+		skillType = 6
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[(skillIndex+1)%3], maxPercentage)
+	elseif 23 <= skillIndex and skillIndex < 26 then
+		skillType = 7
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[(skillIndex+1)%3], maxPercentage)
+	elseif 26 <= skillIndex and skillIndex < 29 then
+		skillType = 8
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[(skillIndex+1)%3], maxPercentage)
+	elseif 29 <= skillIndex and skillIndex < 32 then
+		skillType = 9
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[(skillIndex+1)%3], maxPercentage)
+	elseif 32 <= skillIndex and skillIndex < 35 then
+		skillType = 10
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[(skillIndex+1)%3], maxPercentage)
+	elseif 35 <= skillIndex and skillIndex < 38 then
+		skillType = 11
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + plusPoint[(skillIndex+1)%3], maxPercentage)
+	elseif 9 == skillIndex then
+		skillType = 12			-- 행운
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + 1, maxGrade)
+		-- skillTypeString[skillType] = "행운 " .. self.plusCount[skillType] .. "단계 증가"
+	elseif 10 == skillIndex then
+		skillType = 13			-- 낚시
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + 1, maxGrade)
+		-- skillTypeString[skillType] = "낚시 " .. self.plusCount[skillType] .. "단계 증가"
+	elseif 11 == skillIndex then
+		skillType = 14			-- 채집
+		self.plusCount[skillType] = math.min(self.plusCount[skillType] + 1, maxGrade)
+		-- skillTypeString[skillType] = "채집 " .. self.plusCount[skillType] .. "단계 증가"
+	end
+	self.skillTypeCount[skillType] = self.skillTypeCount[skillType] + 1
+	return skillType
+end
+function skillTypeCount_Init()
+	for index = 0, maxskillTypeCount - 1 do
+		skillInfo.plusCount[index] = 0
+		skillInfo.skillTypeCount[index] = 0
+	end
+	petSkillList.desc:SetText( PAGetString( Defines.StringSheet_GAME, "LUA_PETCOMPOSE_SKILLINHERIT_DESC" ))	-- "※ 꺼낸 애완동물 기술의 효과 목록을 표시합니다.\n※ 중첩 효과는 최대 " .. maxPercentage .. "%까지만 적용됩니다." )
+	petSkillList_Close()
 end
 
 function PetList:SetPosition()
@@ -599,7 +887,6 @@ function petListNew_Seal( petNoStr, index )
 
 	local self = PetList
 	local petNo_s64 = tonumber64(petNoStr)
-	-- _PA_LOG("test", petNoStr);
 	FGlobal_PetControl_SealPet( index )	-- 컨트롤 초기화
 	ToClient_requestPetSeal( petNo_s64 )
 	self.startIndex = 0
@@ -660,16 +947,93 @@ function PetListNew_Compose()
 	PetList:Update( PetList.startIndex )
 end
 
+local composePetNo = function( petNo )
+	for sealPetIndex = 0, ToClient_getPetSealedList() - 1 do
+		local petData = ToClient_getPetSealedDataByIndex(sealPetIndex)
+		local _petNo = petData._petNo
+		
+		if petNo == _petNo then
+			local petSS = petData:getPetStaticStatus()
+			local petTier = petSS:getPetTier() + 1
+			return petTier
+		end
+	end
+end
+
 function petListNew_Compose_Set( petNoStr, petRace )
 	if nil == petComposeNo[0] then
 		petComposeNo[0] = tonumber64( petNoStr )
 		petImgChange( petComposeNo[0], 0 )
 		petCompose._race = petRace
+		PetCompose_UpdatePetSkillList()
+		composePetTier = composePetNo( petComposeNo[0] )
 	elseif nil == petComposeNo[1] then
 		petComposeNo[1] = tonumber64( petNoStr )
 		petImgChange( petComposeNo[1], 1 )
+		PetCompose_UpdatePetSkillList()
 	end
 	PetList:Update( PetList.startIndex )
+end
+
+function petListNew_AllSealCheck( petNo_s32 )
+	if (nil == checkUnSealList[petNo_s32] or false == checkUnSealList[petNo_s32]) then
+		checkUnSealList[petNo_s32] = true
+	else
+		checkUnSealList[petNo_s32] = false
+	end
+	petListNew_Save()
+	PetList:Update( PetList.startIndex )
+end
+
+function petListNew_Save()
+	local sealPetCount		= ToClient_getPetSealedList()	-- 맡긴 펫 갯수 리턴
+
+	local maxCount = math.min(9, maxUnsealCount)
+	local idx = 0
+	for petIndex = 0, sealPetCount-1 do
+		local petData	= ToClient_getPetSealedDataByIndex( petIndex )
+		local petNo_s32 = Int64toInt32(petData._petNo)
+		-- _PA_LOG("LUA", tostring(checkUnSealList[petNo_s32]))
+		if checkUnSealList[petNo_s32] then
+			-- _PA_LOG("LUA", "PetAllSeal"..tostring(idx))
+			ToClient_getGameUIManagerWrapper():setLuaCacheDataListNumber(CppEnums.GlobalUIOptionType["PetAllSeal"..tostring(idx)], petNo_s32 )
+			idx = idx + 1
+			if 9 <= idx then
+				return
+			end
+		end
+	end
+	for index=idx, maxCount do
+		ToClient_getGameUIManagerWrapper():setLuaCacheDataListNumber(CppEnums.GlobalUIOptionType["PetAllSeal"..index], 0)
+	end
+end
+
+function petListNew_Load()
+	checkUnSealList = {}
+	local maxCount = 9
+
+	for idx=0, maxCount do
+		local petNo_s32 = ToClient_getGameUIManagerWrapper():getLuaCacheDataListNumber(CppEnums.GlobalUIOptionType["PetAllSeal"..idx])
+		if 0 ~= petNo_s32 then
+			checkUnSealList[petNo_s32] = true
+		end
+	end
+	
+end
+
+function petListNew_CehckThis( petNo )
+	local checkValue = false
+	for sealPetIndex = 0, ToClient_getPetSealedList() - 1 do
+		local petData	= ToClient_getPetSealedDataByIndex(sealPetIndex)
+		local _petNo	= petData._petNo
+
+		if petNo == _petNo then
+			checkValue = true
+		else
+			checkValue = false
+		end
+	end
+	return checkValue
 end
 
 function petImgChange( petNo, index )
@@ -681,9 +1045,13 @@ function petImgChange( petNo, index )
 			local petSS = petData:getPetStaticStatus()
 			local iconPath = petData:getIconPath()
 			if 0 == index then
+				petCompose.composePetSlot_1:ChangeTextureInfoName( iconPath )
+				petCompose.composePetSlot_1:SetShow( true )
 				petCompose.icon_1:ChangeTextureInfoName( iconPath )
 				petCompose.icon_1:SetShow( true )
 			elseif 1 == index then
+				petCompose.composePetSlot_2:ChangeTextureInfoName( iconPath )
+				petCompose.composePetSlot_2:SetShow( true )
 				petCompose.icon_2:ChangeTextureInfoName( iconPath )
 				petCompose.icon_2:SetShow( true )
 			end
@@ -697,7 +1065,7 @@ function HandleClicked_PetCompose_ClearEdit()
 	SetFocusEdit( petCompose.editName )
 	petCompose.editName:SetEditText( "", true )
 end
-	
+
 function Confirm_PetCompose()
 	ClearFocusEdit( petCompose.editName )
 	UI.Set_ProcessorInputMode(IM.eProcessorInputMode_UiMode)
@@ -711,7 +1079,21 @@ function Confirm_PetCompose()
 
 	if nil ~= petComposeNo[1] then
 		local confirm_compose = function()
-			ToClient_requestPetFusion( petName, petComposeNo[0], petComposeNo[1] )
+			if petCompose.preserveSkillNo == nil then
+				petCompose.preserveSkillNo = ToClient_getPetEquipSkillMax()
+			end
+			
+			local isInherit = 1
+			local petNo_1 = petComposeNo[0]
+			local petNo_2 = petComposeNo[1]
+			if petCompose.radioBtn_Pet_3:IsCheck() then
+				isInherit = 0
+			elseif petCompose.radioBtn_Pet_2:IsCheck() then
+				petNo_1 = petComposeNo[1]
+				petNo_2 = petComposeNo[0]
+			end
+			
+			ToClient_requestPetFusion( petName, petNo_1, petNo_2, isInherit )	-- 4번째 인자가 0일 땐 계승 안함, 1일 땐 함
 			PetList.scroll:SetControlTop()
 			Panel_Window_PetCompose_Close()
 		end
@@ -741,12 +1123,112 @@ function PetCompose_Init()
 	petCompose.icon_2:ChangeTextureInfoName( "" )
 	petCompose.icon_1:SetShow( false )
 	petCompose.icon_2:SetShow( false )
+	petCompose.composePetSlot_1:ChangeTextureInfoName( "" )
+	petCompose.composePetSlot_2:ChangeTextureInfoName( "" )
+	petCompose.composePetSlot_1:SetShow( false )
+	petCompose.composePetSlot_2:SetShow( false )
 	composableCheck = false
+	petCompose.preserveSkillNo	= nil
 	ClearFocusEdit( petCompose.editName )
+	petCompose.radioBtn_Pet_1:SetCheck( false )
+	petCompose.radioBtn_Pet_2:SetCheck( false )
+	petCompose.radioBtn_Pet_3:SetCheck( true )
+	PetCompose_UpdatePetSkillList()
 end
 
 function CheckCompose()
 	return composableCheck
+end
+
+local petSkillCheck
+function PetCompose_UpdatePetSkillList()
+	local petNo0 = petComposeNo[0]
+	local petNo1 = petComposeNo[1]
+	
+	PetComposeSkill_Init()
+	petCompose.skillNoList[0] = nil
+
+	petSkillCheck = {}		-- 겹치는 스킬이 생기면 tooltip이 꼬이므로 제외해준다.
+	
+	local havePetSkillCheck = function( petNo )
+		if petNo ~= nil then
+			local skillLearnCount = 0
+			local skillMaxCount = ToClient_getPetEquipSkillMax()
+			for sealPetIndex = 0, ToClient_getPetSealedList() - 1 do
+				local petData = ToClient_getPetSealedDataByIndex(sealPetIndex)
+				local _petNo = petData._petNo
+
+				if _petNo ~= nil and petNo == _petNo then
+					for skill_idx = 0, skillMaxCount - 1 do
+						local skillStaticStatus = ToClient_getPetEquipSkillStaticStatus( skill_idx )
+						local isLearn = petData:isPetEquipSkillLearned( skill_idx )
+						if true == isLearn and nil ~= skillStaticStatus and true ~= petSkillCheck[skill_idx] then
+							skillLearnCount = skillLearnCount + 1
+							petSkillCheck[skill_idx] = true
+
+							local skillTypeStaticWrapper = skillStaticStatus:getSkillTypeStaticStatusWrapper()
+							if nil ~= skillTypeStaticWrapper and skillLearnCount <= #petCompose.skillSlot then
+								local skillNo = skillStaticStatus:getSkillNo()
+								petCompose.skillNoList[skillLearnCount] = skill_idx
+								petCompose.skillSlotBg[skillLearnCount]:SetShow( petComposeChange )	--
+								petCompose.skillSlot[skillLearnCount]:SetShow( petComposeChange )		--
+								petCompose.skillSlot[skillLearnCount]:SetIgnore( false )
+								petCompose.skillSlot[skillLearnCount]:ChangeTextureInfoName( "Icon/" .. skillTypeStaticWrapper:getIconPath() )
+								petCompose.skillSlot[skillLearnCount]:addInputEvent( "Mouse_On",	"PetCompose_ShowSkillToolTip( " .. skill_idx .. ", " .. skillLearnCount .. " )" )
+								petCompose.skillSlot[skillLearnCount]:addInputEvent( "Mouse_Out",	"PetCompose_HideSkillToolTip()" )
+							
+								Panel_SkillTooltip_SetPosition(skillNo, petCompose.skillSlot[skillLearnCount], "PetSkill")
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	
+	if petCompose.radioBtn_Pet_1:IsCheck() and nil ~= petNo0 then
+		havePetSkillCheck( petNo0 )
+	elseif petCompose.radioBtn_Pet_2:IsCheck() and nil ~= petNo1 then
+		havePetSkillCheck( petNo1 )
+	end
+end
+
+function PetComposeSkill_Init()
+	for ii, aSkillSlotBg in pairs( petCompose.skillSlotBg ) do
+		aSkillSlotBg:SetShow( false )
+	end
+	for ii, aSkillSlot in pairs( petCompose.skillSlot ) do
+		aSkillSlot:SetShow( false )
+		aSkillSlot:addInputEvent( "Mouse_On", "" )
+		aSkillSlot:addInputEvent( "Mouse_Out", "" )
+	end
+end
+
+function InheritPetSkill_Pet(index)
+	petCompose.radioBtn_Pet_1:SetCheck( false )
+	petCompose.radioBtn_Pet_2:SetCheck( false )
+	petCompose.radioBtn_Pet_3:SetCheck( false )
+	if 1 == index then
+		petCompose.radioBtn_Pet_1:SetCheck( true )
+	elseif 2 == index then
+		petCompose.radioBtn_Pet_2:SetCheck( true )
+	elseif 3 == index then
+		petCompose.radioBtn_Pet_3:SetCheck( true )
+	end
+	PetCompose_UpdatePetSkillList()
+end
+
+function PetCompose_ShowSkillToolTip( skill_idx, uiIdx )
+	local skillStaticStatus			= ToClient_getPetEquipSkillStaticStatus( skill_idx )
+	local skillTypeStaticWrapper	= skillStaticStatus:getSkillTypeStaticStatusWrapper()
+	local petSkillNo				= skillStaticStatus:getSkillNo()
+	local uiBase					= petCompose.skillSlot[uiIdx]
+
+	Panel_SkillTooltip_Show(petSkillNo, false, "PetSkill")
+end
+
+function PetCompose_HideSkillToolTip()
+	Panel_SkillTooltip_Hide()
 end
 
 function FGlobal_CheckEditBox_PetCompose( uiEditBox )
@@ -764,7 +1246,9 @@ function PetCompose_Open()
 	Panel_Window_PetCompose:SetPosY( Panel_Window_PetListNew:GetPosY() )
 	PetCompose_Init()
 	petCompose.editName:SetEditText( petComposeString )
-
+	PetList:Update( PetList.startIndex )
+	petSkillList_Close()
+	composePetTier = 0
 end
 
 function FGlobal_PetListNew_Open()
@@ -805,13 +1289,30 @@ function FGlobal_HandleClicked_PetMarket_Show()
 	end
 	--PetMarket_Show()
 end
+-- 펫 모두 찾기
+function FGlobal_HandleClicked_petControl_AllSeal()
+	local sealPetCount		= ToClient_getPetSealedList()	-- 맡긴 펫 갯수 리턴
+	local unSealPetCount	= ToClient_getPetUnsealedList() -- 찾은 펫 갯수 리턴
+	if maxUnsealCount <= unSealPetCount then
+		Proc_ShowMessage_Ack( PAGetString(Defines.StringSheet_GAME, "LUA_UNABLE_SUMMON_PET") ) -- "더 이상 애완동물을 찾을 수 없습니다."
+	end
+	if 0 == sealPetCount then
+		return
+	end
+	for petIndex = 0, sealPetCount-1 do
+		local petData	= ToClient_getPetSealedDataByIndex( petIndex )
+		local petNo_s64	= petData._petNo
+		if checkUnSealList[Int64toInt32(petNo_s64)] then
+			petListNew_UnSeal( tostring(petNo_s64) )
+		end
+	end
+end
 
 function FromClient_PetUpdate()
 	PetList:Update( PetList.startIndex )
 	PetInfoInit_ByPetNo()
 	FGlobal_PetControl_CheckUnSealPet()
 	PetList:SetScroll()
-	PetControl_Show()
 end
 
 function FromClient_PetUpdate_ButtonShow( petNo )
@@ -823,7 +1324,6 @@ function FromClient_PetUpdate_ButtonShow( petNo )
 end
 
 function FGlobal_PetListNew_NoPet()
-	
 	if isFlushedUI() then
 		return
 	end
@@ -880,7 +1380,8 @@ function PetList:registEventHandler()
 	self.scrollCtrBTN	:addInputEvent("Mouse_LPress",			"HandleClicked_PetList_ScrollBtn()")
 	self.scroll			:addInputEvent("Mouse_LUp",				"HandleClicked_PetList_ScrollBtn()")
 	self.BTN_Compose	:addInputEvent("Mouse_LUp",				"PetListNew_Compose()" )
-	self.BTN_AllUnSeal	:addInputEvent("Mouse_LUp",				"FGlobal_HandleClicked_petControl_AllSeal()")
+	self.BTN_AllUnSeal	:addInputEvent("Mouse_LUp",				"FGlobal_HandleClicked_petControl_AllUnSeal()")
+	self.BTN_AllSeal	:addInputEvent("Mouse_LUp",				"FGlobal_HandleClicked_petControl_AllSeal()")
 	self.BTN_Market		:addInputEvent("Mouse_LUp",				"FGlobal_HandleClicked_PetMarket_Show()")
 end
 
@@ -898,11 +1399,49 @@ end
 
 
 PetList:Initialize()
+petListNew_Load()
 FGlobal_PetListNew_NoPet()
 PetList:registEventHandler()
 PetList:registMessageHandler()
 UI.addRunPostRestorFunction( FGlobal_PetListNew_NoPet )
 
+-- 펫 교환이 아직 변경되지 않았다면, 필요없는 콘트롤은 꺼준다! 2016-03-14
+function PetComposeChange_Check()
+	if not petComposeChange then
+		local self = petCompose
+		self.petComposeSkillDesc:SetShow( petComposeChange )
+		self.skillBg			:SetShow( petComposeChange )
+
+		self.petComposeSkillDesc:SetShow( petComposeChange )
+		self.composePetBg_1		:SetShow( petComposeChange )
+		self.composePetBg_2		:SetShow( petComposeChange )
+		self.composePetBg_3		:SetShow( petComposeChange )
+		
+		self.composePetSlot_1	:SetShow( petComposeChange )
+		self.composePetSlot_2	:SetShow( petComposeChange )
+		self.composePetSlot_3	:SetShow( petComposeChange )
+		
+		self.radioBtn_Pet_1		:SetShow( petComposeChange )
+		self.radioBtn_Pet_2		:SetShow( petComposeChange )
+		self.radioBtn_Pet_3		:SetShow( petComposeChange )
+		self.noneSlotDesc		:SetShow( petComposeChange )
+		
+		self.skillTitle			:SetShow( petComposeChange )
+		self.skillBg			:SetShow( petComposeChange )
+		self.skillSlotBg[1]		:SetShow( petComposeChange )
+		self.skillSlotBg[2]		:SetShow( petComposeChange )
+		self.skillSlotBg[3]		:SetShow( petComposeChange )
+		
+		self.skillSlot[1]		:SetShow( petComposeChange )
+		self.skillSlot[2]		:SetShow( petComposeChange )
+		self.skillSlot[3]		:SetShow( petComposeChange )
+		
+		Panel_Window_PetCompose:SetSize( Panel_Window_PetCompose:GetSizeX(), 330 )
+	end
+end
+PetComposeChange_Check()
+petCompose.btn_Yes:ComputePos()
+petCompose.btn_No:ComputePos()
 
 -- getPetSealedList : 맡겨져있는 펫 리스트데이타 (리턴 : 갯수)
 -- getPetSealedDataByIndex : 인덱스로 실제 데이터 뺴오기(리턴 PetSealData : _characterKey)

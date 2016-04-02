@@ -2174,13 +2174,11 @@ function FromClient_notifyItemMarketMessage( msgType, strParam1, param1, param2,
 		local subStr = nil
 		if param4 then
 			subStr = "LUA_ITEMMARKET_REGIST_ITEMMARKET"
-			readyTime = "1분 후 노출 예정 "
 		else
 			subStr = "LUA_ITEMMARKET_STANDBY_ITEMMARKET"
-			readyTime = "15~20분 내로 노출 예정 "
 		end
-_PA_LOG("정태곤", "isCash : " .. tostring(isCash))
-		local message = {main = PAGetStringParam2( Defines.StringSheet_GAME, "LUA_ITEMMARKET_NOTIFYITEMMARKETMSG_MAIN", "strParam1", strParam1, "param3", makeDotMoney(param3) ), sub = readyTime .. PAGetString(Defines.StringSheet_GAME, subStr) }
+
+		local message = {main = PAGetStringParam2( Defines.StringSheet_GAME, "LUA_ITEMMARKET_NOTIFYITEMMARKETMSG_MAIN", "strParam1", strParam1, "param3", makeDotMoney(param3) ), sub = PAGetString(Defines.StringSheet_GAME, subStr) }
 		Proc_ShowMessage_Ack_For_RewardSelect( message, 5, 19 )
 
 	elseif 2 == msgType then

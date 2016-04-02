@@ -562,6 +562,10 @@ function HandleClicked_CashCustomization_SelectItem( itemId )
 end
 function HandleClicked_CashCumaBuy_Confirm()
 	local self = CashCumaBuy
+	if -1 == self.SelectedItemNo then
+		Proc_ShowMessage_Ack( PAGetString(Defines.StringSheet_GAME, "LUA_CASH_CUSTOMIZATION_NOSELECT") ) -- 선택된 항목이 없습니다.
+		return
+	end
 	local msgTitle		= PAGetString(Defines.StringSheet_GAME, "EXCHANGE_TEXT_STATE_FINAL_CHECK")
 	local msgContent	= ""
 	if(CashCumaBuy.ApplyType == "inven") then 

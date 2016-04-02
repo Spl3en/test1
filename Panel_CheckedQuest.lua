@@ -2436,8 +2436,9 @@ function _QuestWidget_FindTarget_DrawMapPath( questGroupId, questId, condition, 
 					selfPlayer:checkNaviPathUI(positionList[randomIndex]._key)
 				end
 			end
-			
-			audioPostEvent_SystemUi(00,14)
+			if TutorialQuestCompleteCheck() then
+				audioPostEvent_SystemUi(00,14)
+			end
 		else																-- 위치 값이 없다면
 			-- QuestListUIPool._listQuestNaviButton[nabiIndex]:SetShow( false )
 		end

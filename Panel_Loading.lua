@@ -76,9 +76,12 @@ function LoadingPanel_Init()
 	goblinRun:SetPosX( progressRateX + progressHeadX + progressHead:GetSizeX() )
 	goblinRun:SetPosY( progressRateY + progressHeadY + 25 )
 
-	local isXmas = ToClient_isEventOn('x-mas')
+	local isXmas	= ToClient_isEventOn('x-mas')
+	local isEaster	= ToClient_isEventOn('Easter')
 	if isXmas then
 		goblinRun:ChangeTextureInfoName("New_UI_Common_ForLua/Default/goblrun2.dds" )
+	elseif isEaster then
+		goblinRun:ChangeTextureInfoName("New_UI_Common_ForLua/Default/EN_easter.dds" )
 	else
 		goblinRun:ChangeTextureInfoName("new_ui_common_forlua/default/goblrun.dds" )
 	end

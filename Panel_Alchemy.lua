@@ -216,7 +216,7 @@ end
 --				SHOW 해주는 함수인 듯 하다
 ------------------------------------------------------------
 function Alchemy_Show(_isCook)
-	Inventory_SetFunctor( nil, Alchemy_PushItemFromInventory, Alchemy_Close, nil  )
+	Inventory_SetFunctor( Alchemy_InvenFilter, Alchemy_PushItemFromInventory, Alchemy_Close, nil  )
 
 	--------------------------------------------
 	-- 스크롤은 처음 열릴때만 위치 초기화.
@@ -275,6 +275,18 @@ function Alchemy_Show(_isCook)
 
 	_frameScroll:SetShow(false)
 	_frameContent:SetSize( _frameContent:GetSizeX(), _uiAlchemyDesc:GetSizeY() )
+end
+
+function Alchemy_InvenFilter( slotNo, itemWrapper )
+	local isVested			= itemWrapper:get():isVested()
+	local isPersonalTrade	= itemWrapper:getStaticStatus():isPersonalTrade()
+
+	if (isUsePcExchangeInLocalizingValue()) then
+		local isFilter = ( isVested and isPersonalTrade )
+		if( isFilter ) then
+			return isFilter
+		end
+	end
 end
 
 function Alchemy_Close()

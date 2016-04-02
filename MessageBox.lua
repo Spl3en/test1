@@ -158,6 +158,9 @@ function setCurrentMessageData(currentData, position)
 end
 
 function MessageBox.showMessageBox(MessageData, position, isGameExit, keyUse)
+	if Panel_Win_System:GetShow() then
+		return
+	end
 	local Front = list
 	local preList = nil
 	functionKeyUse = keyUse

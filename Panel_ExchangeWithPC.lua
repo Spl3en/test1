@@ -466,11 +466,17 @@ function ExchangePC_InventoryFilter( slotNo, itemWrapper, inventoryType )
 	if nil == itemWrapper then
 		return true
 	end
-	local itemEnchantSSW	= itemWrapper:getStaticStatus()
-	local itemEnchantKey	= itemEnchantSSW:get()._key
-	local isAble			= isPersonalTradeByItemEnchantKey(itemEnchantKey)
+	local itemEnchantSSW		= itemWrapper:getStaticStatus()
+	local itemEnchantKey		= itemEnchantSSW:get()._key
 
-	return (not isAble);
+	local itemPersonalTradeItem	= itemEnchantSSW:isPersonalTrade()
+	local isAble				= isPersonalTradeByItemEnchantKey(itemEnchantKey)
+	local isVested				= itemWrapper:get():isVested()
+	local isCheck = isAble and itemPersonalTradeItem and isUsePcExchangeInLocalizingValue() and (not isVested)
+	
+	-- local isAble				= isPersonalTradeByItemEnchantKey(itemEnchantKey)
+
+	return (not isCheck);
 end
 
 function ExchangePC_InventoryRClick( slotNo, itemWrapper, itemCount, inventoryType )

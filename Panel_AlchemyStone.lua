@@ -847,7 +847,7 @@ function FromClient_AlchemyRepair( whereType, slotNo )
 	if nil ~= itemWrapper then
 		local itemSSW		= itemWrapper:getStaticStatus()
 		local itemName		= itemSSW:getName()
-		Proc_ShowMessage_Ack( itemName .. "이 충전됐습니다." )
+		Proc_ShowMessage_Ack( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_ALCHEMYSTONE_CHARGE_COMPLETE_ACK", "itemName", itemName ) ) -- itemName .. "이 충전됐습니다." )
 	end
 end
 

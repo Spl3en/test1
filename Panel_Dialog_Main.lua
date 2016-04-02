@@ -195,6 +195,8 @@ _SpacebarIcon:SetPosX ( _uiDialogButton[0]:GetPosX() + _uiDialogButton[0]:GetSiz
 local _rBtnPosX = _uiDialogButton[0]:GetPosX() + _uiDialogButton[0]:GetSizeX() - _SpacebarIcon:GetSizeX() - 5
 local _rBtnPosY = _uiDialogButton[0]:GetPosY()
 
+_uiButtonExit:addInputEvent( "Mouse_On", "Dialog_EtcButtonToolTips( true," .. 0 .. ")" )
+_uiButtonExit:addInputEvent( "Mouse_Out", "Dialog_EtcButtonToolTips( false," .. 0 .. ")" )
 function Button_Exit()
 	_uiButtonExit:addInputEvent( "Mouse_LUp", "FGlobal_HideDialog()" )
 	--_uiButtonExit:SetHorizonRight()
@@ -207,6 +209,8 @@ function Button_Exit()
 	_uiButtonExit:SetTextSpan( btnExitTextPosX, 7 )
 end
 
+_uiButtonBack:addInputEvent( "Mouse_On", "Dialog_EtcButtonToolTips( true," .. 1 .. ")" )
+_uiButtonBack:addInputEvent( "Mouse_Out", "Dialog_EtcButtonToolTips( false," .. 1 .. ")" )
 --추출 메뉴 호출로 임시 변경
 function Button_Back()
 	_uiButtonBack:addInputEvent( "Mouse_LUp", "HandleClickedBackButton()" )
@@ -272,6 +276,7 @@ local Dialog_updateMainDialog = function()
 			firstTime_MeetDarkSpirit()
 		end
 	end
+	_SpacebarIcon:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_DIALOG_MAIN_INTERACTION_FUNCTIONKEY") )
 end
 
 -- 대화창 열기
@@ -818,7 +823,7 @@ function Dialog_updateButtons( isVisible )
 					_btnPositionType = 5
 					_exchangalbeButtonIndex = _dialogCount
 				end
-			elseif ( UI_BTN_TYPE.eDialogButton_Knowledge == dialogButton._dialogButtonType ) then		-- 기운을 소모하지 않고, 지식을 얻을 수 있는 대화버튼
+			elseif ( UI_BTN_TYPE.eDialogButton_Knowledge == dialogButton._dialogButtonType ) and UI_DS.eDialogState_DisplayQuest ~= tostring( linkType ) then		-- 기운을 소모하지 않고, 지식을 얻을 수 있는 대화버튼
 				_exchangalbeButtonPosY = _uiDialogButton[_dialogCount]:GetPosY()
 				_rBtnPlusPosX = 0
 				isExchangalbeButtonCheck = true
@@ -928,7 +933,7 @@ function Dialog_updateButtons( isVisible )
 	for index = 0, 5, 1 do
 		local posX = startPosX + ( buttonSize + buttonGap ) * index
 		_uiFuncButton[index]:EraseAllEffect()
-		_uiFuncButton[index]:addInputEvent("Mouse_On", "" )
+		_uiFuncButton[index]:addInputEvent("Mouse_On", "")
 		_uiFuncButton[index]:addInputEvent("Mouse_Out", "" )
 		
 		nextQuestFunctionBtnClick[index] = false
@@ -952,6 +957,9 @@ function Dialog_updateButtons( isVisible )
 			if nil~= displayExchangeWrapper then
 				FGlobal_Exchange_Item()																-- 아이템 교환 목록
 			end
+
+			_uiFuncButton[index]:addInputEvent("Mouse_On", "Dialog_MouseToolTips(true, " .. funcButtonType .. "," .. index .. ")")
+			_uiFuncButton[index]:addInputEvent("Mouse_Out", "Dialog_MouseToolTips(false, " .. funcButtonType .. "," .. index .. ")" )
 
 			local tempIconSizeX = 23
 			if	funcButtonType == CppEnums.ContentsType.Contents_IntimacyGame then					-- 이야기교류 필요 WP 표시 
@@ -2807,6 +2815,150 @@ function FromClient_CloseAllPanelWhenNpcGoHome()
 	-- NPC 다이얼로그는 닫는 함수는 이 함수 호출 후 클라이언트에서 실행된다
 end
 
+function Dialog_MouseToolTips( isShow, tipType, index )
+	local name, desc, control = nil, nil, nil
+	local Wp = 0
+	local playerLevel = 0
+
+	local selfPlayer = getSelfPlayer()
+	if nil ~= selfPlayer then
+		Wp 			= selfPlayer:getWp()
+		playerLevel = selfPlayer:get():getLevel()
+	end
+
+	local dialogData = ToClient_GetCurrentDialogData()
+	if (nil == dialogData) then
+		return
+	end
+
+	local funcButton = dialogData:getFuncButtonAt(index)
+	local funcButtonType = tonumber(funcButton._param)
+
+	if	tipType == CppEnums.ContentsType.Contents_Quest then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_NewQuest then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Shop then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Skill then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Repair then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Auction then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Inn then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Warehouse then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_IntimacyGame then
+		name = funcButton:getText() .. " (" .. funcButton:getNeedWp() .. "/" .. Wp .. ")"
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Stable then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Transfer then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Guild then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Explore then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_DeliveryPerson then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Enchant then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Socket then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Awaken then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_ReAwaken then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_LordMenu then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Extract then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_TerritoryTrade then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_TerritorySupply then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_GuildShop then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_ItemMarket then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Knowledge then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_HelpDesk then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_SupplyShop then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_MinorLordMenu then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_FishSupplyShop then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_GuildSupplyShop then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	elseif tipType == CppEnums.ContentsType.Contents_Join then
+		name = funcButton:getText()
+		control = _uiFuncButton[index]
+	-- elseif 9999 == tipType and 9999 == index then
+	-- 	name = "대화종료(ESC)"
+	-- 	control = _uiButtonExit
+	end
+
+	registTooltipControl(control, Panel_Tooltip_SimpleText)
+	if isShow == true then
+		TooltipSimple_Show( control, name, desc )
+	else
+		TooltipSimple_Hide()
+	end
+end
+
+function Dialog_EtcButtonToolTips( isShow, tipType )
+	local name, desc, control = nil, nil, nil
+
+	if 0 == tipType then -- EXIT버튼
+		name	= PAGetString(Defines.StringSheet_RESOURCE, "DIALOGUE_BTN_EXIT")
+		control	= _uiButtonExit
+	elseif 1 == tipType then -- 처음으로 버튼
+		name	= PAGetString(Defines.StringSheet_RESOURCE, "PANEL_NPC_DIALOG_BACK")
+		control	= _uiButtonBack
+	end
+
+	registTooltipControl(control, Panel_Tooltip_SimpleText)
+	if isShow == true then
+		TooltipSimple_Show( control, name, desc )
+	else
+		TooltipSimple_Hide()
+	end
+end
+
 ---------------------------------------------------
 -- 추출 화면 호출(임시용)
 --------------------------------------------------
@@ -2817,7 +2969,6 @@ function extraction_Open()
 	else
 		Extraction_OpenPanel( false )
 	end
-
 end
 
 function isShowReContactDialog()						-- 계속 버튼에 R 띄우기 체크용

@@ -688,6 +688,7 @@ function HandleClicked_Reset_UiSetting_Msg()
 			elseif idx == panelID.KeyGuide then -- 액션연계가이드 옵션 저장
 				panelControl[idx].isShow = false
 				Panel_KeyViewer_Hide()
+				PanelMovieKeyViewer_RestorePosition()
 			else	-- 그 외 나머지.
 				panelControl[idx].control:SetShow( true )	
 			end

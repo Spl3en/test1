@@ -170,7 +170,7 @@ function SkillCooltime_UpdatePerFrame(deltaTime)
 	
 	for tSkillKey,slot_desc in pairs(self.slots_description) do
 		local slot = self.slots[ tSkillKey ]
-		remainTime = getSkillCooltime( tSkillKey )
+		remainTime = getSkillCooltime( tSkillKey ) 
 		local realRemainTime = 0
 		local intRemainTime = 0
 		local skillReuseTime = 0
@@ -184,7 +184,7 @@ function SkillCooltime_UpdatePerFrame(deltaTime)
 			row = count % 2
 			col = math.floor(count / 2)
 		end
-		if 0 < remainTime then
+		if 0 < remainTime and nil ~= slot then
 			-- 쿨타임이 있으면 보여주고
 			slot.icon:SetShow( true )
 			-- slot.iconBg:SetPos( col * self.config.slotGapX, row * self.config.slotGapY )

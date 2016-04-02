@@ -496,8 +496,8 @@ end
 
 function FarmInfo_Change_Texture( isChange )
 	local self = farmInfo._ui
-	self.StaticText_CropsIcon_PruningDesc		:SetTextMode(UI_TM.eTextMode_LimitText)
-	self.StaticText_CropsIcon_InsectDamegeDesc	:SetTextMode(UI_TM.eTextMode_LimitText)
+	self.staticText_CropsIcon_PruningDesc		:SetTextMode(UI_TM.eTextMode_LimitText)
+	self.staticText_CropsIcon_InsectDamegeDesc	:SetTextMode(UI_TM.eTextMode_LimitText)
 
 	if (isChange) then
 		self.staticText_Compost		:SetShow( false )

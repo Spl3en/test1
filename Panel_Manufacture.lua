@@ -2585,6 +2585,16 @@ function ManufactureAction_InvenFiler( slotNo, itemWrapper, inventoryType )	-- �
 		return false;
 	end
 	
+	local isVested			= itemWrapper:get():isVested()
+	local isPersonalTrade	= itemWrapper:getStaticStatus():isPersonalTrade()
+
+	if (isUsePcExchangeInLocalizingValue()) then
+		local isFilter = ( isVested and isPersonalTrade )
+		if( isFilter ) then
+			return isFilter
+		end
+	end
+	
 	local actionName = _listAction[_actionIndex]._actionName;
 	local isEnable = nil
 	-- if isNormalInvenCheck() then -- 이 것이 없으면 펄 인벤까지 필터가 먹는다.
@@ -2610,6 +2620,16 @@ function ManufactureAction_WarehouseFilter( slotNo, itemWrapper, stackCount )	--
 		return false
 	end
 	
+	local isVested			= itemWrapper:get():isVested()
+	local isPersonalTrade	= itemWrapper:getStaticStatus():isPersonalTrade()
+
+	if (isUsePcExchangeInLocalizingValue()) then
+		local isFilter = ( isVested and isPersonalTrade )
+		if( isFilter ) then
+			return isFilter
+		end
+	end
+
 	local regionKey = selfPlayer:getRegionKey()
 	local actionName = _listAction[_actionIndex]._actionName;
 	local isEnable = nil

@@ -104,6 +104,10 @@ function FromClient_CancelByAttacked()
 		FGlobal_SendMailForHelpClose()
 	end
 
+	if Panel_Chatting_Filter:GetShow() then
+		FGlobal_ChattingFilterList_Close()
+	end
+
 	-- 친구 메신저 채팅창 포커스 때문에 공격을 맞으면 focus를 게임모드로 바꿔준다.
 	FriendMessanger_KillFocusEdit()
 

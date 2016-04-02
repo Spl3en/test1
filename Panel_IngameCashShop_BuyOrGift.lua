@@ -948,6 +948,9 @@ function	InGameShopBuy_Close()
 end
 
 function	InGameShopBuy_CheckAddUser()
+	if Panel_Win_System:GetShow() then
+		return
+	end
 	local checkUserNickName = inGameShopBuy._edit_Gift:GetEditText()
 	getIngameCashMall():requestUserNickNameByCharacterName(checkUserNickName)
 	

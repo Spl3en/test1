@@ -1661,6 +1661,7 @@ function RadarMap_UpdatePosition()
 	-- radarTimeControl.regionName:SetSpanSize( 120, 35 )	-- 지역 이름 표시
 	-- radarTimeControl.regionName:ComputePos()
 end
+RadarMap_UpdatePosition()		-- 미니맵이 꺼진 상태면 포지션 업데이트가 불가능하므로, 로딩 시 한 번 돌려준다!
 
 function RadarMap_MouseOnOffAnimation(deltaTime)	
 	local isUiMode = (CppEnums.EProcessorInputMode.eProcessorInputMode_UiMode == getInputMode() or CppEnums.EProcessorInputMode.eProcessorInputMode_ChattingInputMode == getInputMode());

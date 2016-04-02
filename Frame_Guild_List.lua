@@ -161,6 +161,9 @@ staticText_activity				:setTooltipEventRegistFunc("_guildListInfoPage_titleToolt
 staticText_contract				:addInputEvent("Mouse_On",	"_guildListInfoPage_titleTooltipShow( true,		" .. 2 .. " )")
 staticText_contract				:addInputEvent("Mouse_Out",	"_guildListInfoPage_titleTooltipShow( false,	" .. 2 .. " )")
 staticText_contract				:setTooltipEventRegistFunc("_guildListInfoPage_titleTooltipShow( true,		" .. 2 .. " )")
+staticText_contributedTendency	:addInputEvent("Mouse_On",	"_guildListInfoPage_titleTooltipShow( true,		" .. 3 .. " )")
+staticText_contributedTendency	:addInputEvent("Mouse_Out",	"_guildListInfoPage_titleTooltipShow( false,	" .. 3 .. " )")
+staticText_contributedTendency	:setTooltipEventRegistFunc("_guildListInfoPage_titleTooltipShow( true,		" .. 3 .. " )")
 
 function _guildListInfoPage_titleTooltipShow( isShow, titleType )
 	local control = nil
@@ -182,6 +185,10 @@ function _guildListInfoPage_titleTooltipShow( isShow, titleType )
 		name = PAGetString(Defines.StringSheet_GAME, "LUA_GUILDLIST_CONTRACT_TITLE")	-- "길드 계약서 보기"
 		desc = PAGetString(Defines.StringSheet_GAME, "LUA_GUILDLIST_CONTRACT_CONTENTS")
 		-- "해당 길드원의 길드 계약 내용을 열람할 수 있는 항목입니다."
+	elseif 3 == titleType then
+		control = staticText_contributedTendency
+		name = PAGetString(Defines.StringSheet_GAME, "LUA_GUILD_LIST_CONTRIBUTEDTENDENCY_TOOLTIP_TITLE")
+		desc = PAGetString(Defines.StringSheet_GAME, "LUA_GUILD_LIST_CONTRIBUTEDTENDENCY_TOOLTIP_DESC")
 	end
 
 	if true == isShow then
@@ -342,17 +349,17 @@ function GuildListInfoPage:initialize()
 		rtGuildListInfo._activity				:SetIgnore( false )
 		rtGuildListInfo._partLine				:SetIgnore( false )
 		
-		rtGuildListInfo._grade					:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
-		rtGuildListInfo._level					:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
-		rtGuildListInfo._class					:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
+		-- rtGuildListInfo._grade					:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
+		-- rtGuildListInfo._level					:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
+		-- rtGuildListInfo._class					:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
 		rtGuildListInfo._charName				:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
 		rtGuildListInfo._charName				:addInputEvent( "Mouse_On",			"HandleToolTipChannelName( true,	" .. pIndex .. ")"	)
 		rtGuildListInfo._charName				:addInputEvent( "Mouse_Out",		"HandleToolTipChannelName( false,	" .. pIndex .. ")"	)
 		rtGuildListInfo._charName				:addInputEvent("Mouse_LUp", "HandleToolTipChannelName( true, " .. pIndex .. " )")
-		rtGuildListInfo._contributedTendency	:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
-		rtGuildListInfo._activity				:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
+		-- rtGuildListInfo._contributedTendency	:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
+		-- rtGuildListInfo._activity				:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
 		rtGuildListInfo._contractBtn			:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberContractButton(" .. pIndex .. ")"	)
-		rtGuildListInfo._guardHim				:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
+		-- rtGuildListInfo._guardHim				:addInputEvent( "Mouse_LUp",		"HandleClickedGuildMemberMenuButton(" .. pIndex .. ")"	)
 		
 		rtGuildListInfo._grade					:addInputEvent( "Mouse_UpScroll", 	"GuildListMouseScrollEvent(true)")
 		rtGuildListInfo._level					:addInputEvent( "Mouse_UpScroll", 	"GuildListMouseScrollEvent(true)")
@@ -427,6 +434,7 @@ function GuildListInfoPage:initialize()
 
 	for	index = 0, (_UI_Menu_Button.Type_Count-1), 1 do
 		self._buttonList[index] = createListInfoButton(index)
+		self._buttonList[index]:addInputEvent( "Mouse_Out", "MouseOutGuildMenuButton()"	)
 	end
 	
 	Panel_Guild_List:SetChildIndex(staticText_Grade, 9999)
@@ -473,6 +481,8 @@ function GuildListInfoPage:initialize()
 	self._frameDefaultBG:MoveChilds(self._frameDefaultBG:GetID(), Panel_Guild_List)
 	UI.deletePanel(Panel_Guild_List:GetID())
 	Panel_Guild_List = nil
+
+	GuildListInfoPage._textBusinessFunds:SetSpanSize( GuildListInfoPage._textBusinessFundsBG:GetSpanSize().x+GuildListInfoPage._textBusinessFundsBG:GetTextSizeX(), GuildListInfoPage._textBusinessFunds:GetSpanSize().y )
 end
 
 ----------------------------------------------------------------------
@@ -480,6 +490,7 @@ end
 ----------------------------------------------------------------------
 
 function HandleClickedGuildMemberMenuButton( index )
+	local self = GuildListInfoPage
 	local dataIdx = tempGuildList[index+1].idx	-- 새로운 배열에 저장된 정렬을 기반으로 한다.
 	local guildMember = ToClient_GetMyGuildInfoWrapper():getMember( dataIdx )
 	local grade = guildMember:getGrade()		-- 0: 대장 / 1: 부대장 / 2: 일반
@@ -487,8 +498,8 @@ function HandleClickedGuildMemberMenuButton( index )
 	local isGuildMaster = getSelfPlayer():get():isGuildMaster()	
 	local isGuildSubMaster = getSelfPlayer():get():isGuildSubMaster()	
 
-	local buttonListBgX = getMousePosX() - Panel_Window_Guild:GetPosX() - _constCollectionX
-	local buttonListBgY = getMousePosY() - Panel_Window_Guild:GetPosY() - _constCollectionY	
+	local buttonListBgX = self._list[index]._charName:GetParentPosX() - Panel_Window_Guild:GetPosX() -- _constCollectionX
+	local buttonListBgY = self._list[index]._charName:GetParentPosY() - Panel_Window_Guild:GetPosY() - _constCollectionY	
 	GuildListInfoPage._buttonListBG:SetPosX( buttonListBgX )
 	GuildListInfoPage._buttonListBG:SetPosY( buttonListBgY )
 	
@@ -813,7 +824,6 @@ end
 
 -- 버튼 창에서 마우스 벗어날 시에 창닫기
 function MouseOutGuildMenuButton()
-	
 	local self = GuildListInfoPage
 	
 	local sizeX = self._buttonListBG:GetSizeX();
@@ -823,12 +833,13 @@ function MouseOutGuildMenuButton()
 	--local mousePosX = getMousePosX();
 	--local mousePosY = getMousePosY();
 	
+	local xxxx = Panel_Window_Guild:GetPosX() + posX + 42
+	local yyyy = Panel_Window_Guild:GetPosY() + posY + 95
 	local mousePosX = getMousePosX() - Panel_Window_Guild:GetPosX() - _constCollectionX
 	local mousePosY = getMousePosY() - Panel_Window_Guild:GetPosY() - _constCollectionY
 
-	
-	if( 	( posX < mousePosX) and ( mousePosX < (posX+sizeX) ) 
-		and ( posY < mousePosY) and ( mousePosY < (posY+sizeY) )  ) then
+	if( 	( xxxx <= getMousePosX()) and ( getMousePosX() <= (xxxx+sizeX) ) 
+		and ( yyyy <= getMousePosY()) and ( getMousePosY() <= (yyyy+sizeY) ) ) then
 		-- 영역 안에 있다.
 	else
 		self._buttonListBG:SetShow(false)
@@ -1176,12 +1187,12 @@ function GuildListInfoPage:UpdateData()
 		end
 
 		-- 접속 여부와 상관 없이 추방/임명 등 기능의 동작을 막아야 함.
-		self._list[index]._grade				:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
-		self._list[index]._level				:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
-		self._list[index]._class				:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
+		-- self._list[index]._grade				:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
+		-- self._list[index]._level				:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
+		-- self._list[index]._class				:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
 		self._list[index]._charName				:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
-		self._list[index]._activity				:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
-		self._list[index]._contributedTendency	:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
+		-- self._list[index]._activity				:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
+		-- self._list[index]._contributedTendency	:addInputEvent("Mouse_LUp", "HandleClickedGuildMemberMenuButton( " .. index .. " )")
 
 		local contractAble = myGuildMemberInfo:getContractableUtc()
 		local expiration = myGuildMemberInfo:getContractedExpirationUtc()

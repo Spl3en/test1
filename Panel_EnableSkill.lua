@@ -790,4 +790,21 @@ function FromClient_EventSkillWindowUpdate()
 	enableSkill_UpdateData()
 end
 
-registerEvent("EventSkillWindowUpdate", "FromClient_EventSkillWindowUpdate")
+function FromClient_UseSkillAskFromOtherPlayer( fromName )
+	local messageboxMemo	= "[<PAColor0xFFE49800>" .. fromName .. PAGetString( Defines.StringSheet_GAME, "LUA_ANSWERSKILL_QUESTTION" ) -- "님이 스킬을 사용하였습니다. 수락하시겠습니다."	--"님이 아이템을 사용하였습니다. 수락하시겠습니까?"
+	local messageboxData	= { title = PAGetString( Defines.StringSheet_GAME, "LUA_ANSWERSKILL_MESSAGEBOX_TITLE"), content = messageboxMemo, functionYes = UseSkillFromOtherPlayer_Yes, functionCancel = UseSkillFromOtherPlayer_No, priority = CppEnums.PAUIMB_PRIORITY.PAUIMB_PRIORITY_LOW }
+	MessageBox.showMessageBox(messageboxData)
+end
+
+function UseSkillFromOtherPlayer_Yes()
+	ToClient_AnswerUseSkill( true )
+end
+
+function UseSkillFromOtherPlayer_No()
+	ToClient_AnswerUseSkill( false )
+end
+
+registerEvent("EventSkillWindowUpdate", "FromClient_EventSkillWindowUpdate")
+
+registerEvent("FromClient_UseSkillAskFromOtherPlayer", "FromClient_UseSkillAskFromOtherPlayer")
+

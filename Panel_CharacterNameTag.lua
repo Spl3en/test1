@@ -411,7 +411,7 @@ local settingName = function( actorKeyRaw, targetPanel, actorProxyWrapper )
 	elseif actorProxy:isSelfPlayer() then
 		local playerActorProxyWrapper = getPlayerActor(actorKeyRaw)
 
-		if ( false == playerActorProxyWrapper:get():isHideCharacterName() and true == playerActorProxyWrapper:get():isEquipCamouflage() ) then
+		if ( false == playerActorProxyWrapper:get():isFlashBanged() and false == playerActorProxyWrapper:get():isHideCharacterName() and true == playerActorProxyWrapper:get():isEquipCamouflage() ) then
 			nameTag:SetMonoTone(true)
 		else
 			nameTag:SetMonoTone(false)
@@ -424,7 +424,7 @@ local settingName = function( actorKeyRaw, targetPanel, actorProxyWrapper )
 	elseif actorProxy:isPlayer() then
 		local playerActorProxyWrapper = getPlayerActor(actorKeyRaw)
 
-		if ( false == playerActorProxyWrapper:get():isHideCharacterName() and true == playerActorProxyWrapper:get():isEquipCamouflage() ) then
+		if ( false == playerActorProxyWrapper:get():isFlashBanged() and false == playerActorProxyWrapper:get():isHideCharacterName() and true == playerActorProxyWrapper:get():isEquipCamouflage() ) then
 			nameTag:SetMonoTone(true)
 		else
 			nameTag:SetMonoTone(false)
@@ -484,7 +484,7 @@ local settingAlias = function( actorKeyRaw, targetPanel, actorProxyWrapper )
 		if playerActorProxyWrapper:checkToTitleKey() then
 			aliasInfo:SetText(playerActorProxyWrapper:getTitleName())
 			
-			if ( false == playerActorProxyWrapper:get():isHideCharacterName() and true == playerActorProxyWrapper:get():isEquipCamouflage() ) then
+			if ( false == playerActorProxyWrapper:get():isFlashBanged() and false == playerActorProxyWrapper:get():isHideCharacterName() and true == playerActorProxyWrapper:get():isEquipCamouflage() ) then
 				aliasInfo:SetMonoTone(true)
 			else
 				aliasInfo:SetMonoTone(false)
@@ -511,8 +511,12 @@ local settingAlias = function( actorKeyRaw, targetPanel, actorProxyWrapper )
 end
 
 local settingTitle = function( actorKeyRaw, targetPanel, actorProxyWrapper )
-	local nickName = UI.getChildControl( targetPanel, "CharacterTitle" )
 	local actorProxy = actorProxyWrapper:get()
+	if ( false == actorProxy:isPlayer() ) and ( false == actorProxy:isMonster() ) and ( false == actorProxy:isNpc() ) then
+		return
+	end
+
+	local nickName = UI.getChildControl( targetPanel, "CharacterTitle" )
 
 	if ( nil  == nickName ) then
 		return 
@@ -526,7 +530,7 @@ local settingTitle = function( actorKeyRaw, targetPanel, actorProxyWrapper )
 			return 
 		end
 		
-		if ( false == playerActorProxyWrapper:get():isHideCharacterName() and true == playerActorProxyWrapper:get():isEquipCamouflage() ) then
+		if ( false == playerActorProxyWrapper:get():isFlashBanged() and false == playerActorProxyWrapper:get():isHideCharacterName() and true == playerActorProxyWrapper:get():isEquipCamouflage() ) then
 			nickName:SetMonoTone(true)
 		else
 			nickName:SetMonoTone(false)
@@ -680,20 +684,24 @@ local settingGuildInfo = function( actorKeyRaw, targetPanel, actorProxyWrapper )
 	if nil == targetPanel then
 		return
 	end
+	if ( false == actorProxyWrapper:get():isPlayer() ) then
+		return
+	end
+	
 	local guildName				= UI.getChildControl( targetPanel, "CharacterGuild" )
 	local guildMark				= UI.getChildControl( targetPanel, "Static_GuildMark" )
 	local guildOccupyIcon		= UI.getChildControl( targetPanel, "Static_Icon_GuildMaster" )
 	-- local guildSubMasterIcon	= UI.getChildControl( targetPanel, "Static_Icon_GuildSubMaster" )
 	local guildBack				= UI.getChildControl( targetPanel, "Static_GuildBackGround" )
+	if ( nil == guildName ) or ( nil == guildMark ) or ( nil == guildOccupyIcon ) or ( nil == guildBack ) then
+		return
+	end
+
 	guildOccupyIcon:SetIgnore(true)
 	guildOccupyIcon:SetShow( false )
 	local guildSpan = guildMark:GetSpanSize();
 	guildOccupyIcon:SetSpanSize( guildSpan.x - (guildOccupyIcon:GetSizeX() / 2 ), 40)
 	-- guildSubMasterIcon:SetIgnore(true)
-	if ( nil == guildName ) or ( nil == guildMark ) then
-		return
-	end
-
 	local playerActorProxyWrapper = getPlayerActor(actorKeyRaw)
 	if ( nil == playerActorProxyWrapper ) then
 		return 
@@ -705,7 +713,7 @@ local settingGuildInfo = function( actorKeyRaw, targetPanel, actorProxyWrapper )
 	
 	local hasGuild		= (playerActorProxy:isGuildMember()) and (false == playerActorProxy:isHideGuildName() or playerActorProxy:isFlashBanged() )
 	
-	if ( false == playerActorProxy:isHideCharacterName() and true == playerActorProxy:isEquipCamouflage() ) then
+	if ( false == playerActorProxy:isFlashBanged() and false == playerActorProxy:isHideCharacterName() and true == playerActorProxy:isEquipCamouflage() ) then
 		guildName:SetMonoTone(true)
 		guildMark:SetMonoTone(true)
 		guildBack:SetMonoTone(true)
@@ -862,7 +870,7 @@ local settingLifeRankIcon = function( actorKeyRaw, targetPanel, actorProxyWrappe
 				lifeRankIcon[lifeContentIndex]:getBaseTexture():setUV( x1, y1, x2, y2 )
 				lifeRankIcon[lifeContentIndex]:setRenderTexture( lifeRankIcon[lifeContentIndex]:getBaseTexture())
 				
-				if ( false == playerActorProxy:isHideCharacterName() and true == playerActorProxy:isEquipCamouflage() ) then
+				if ( false == playerActorProxy:isFlashBanged() and false == playerActorProxy:isHideCharacterName() and true == playerActorProxy:isEquipCamouflage() ) then
 					lifeRankIcon[lifeContentIndex]:SetMonoTone(true)
 				else
 					lifeRankIcon[lifeContentIndex]:SetMonoTone(false)
@@ -898,7 +906,7 @@ local settingLifeRankIcon = function( actorKeyRaw, targetPanel, actorProxyWrappe
 				lifeRankIcon[lifeContentIndex]:getBaseTexture():setUV( x1, y1, x2, y2 )
 				lifeRankIcon[lifeContentIndex]:setRenderTexture( lifeRankIcon[lifeContentIndex]:getBaseTexture())
 				
-				if ( false == playerActorProxy:isHideCharacterName() and true == playerActorProxy:isEquipCamouflage() ) then
+				if ( false == playerActorProxy:isFlashBanged() and false == playerActorProxy:isHideCharacterName() and true == playerActorProxy:isEquipCamouflage() ) then
 					lifeRankIcon[lifeContentIndex]:SetMonoTone(true)
 				else
 					lifeRankIcon[lifeContentIndex]:SetMonoTone(false)
@@ -936,7 +944,7 @@ local settingLifeRankIcon = function( actorKeyRaw, targetPanel, actorProxyWrappe
 		lifeRankIcon[lifeContent.match]:getBaseTexture():setUV( x1, y1, x2, y2 )
 		lifeRankIcon[lifeContent.match]:setRenderTexture( lifeRankIcon[lifeContent.match]:getBaseTexture())
 
-		if ( false == playerActorProxy:isHideCharacterName() and true == playerActorProxy:isEquipCamouflage() ) then
+		if ( false == playerActorProxy:isFlashBanged() and false == playerActorProxy:isHideCharacterName() and true == playerActorProxy:isEquipCamouflage() ) then
 			lifeRankIcon[lifeContent.match]:SetMonoTone(true)
 		else
 			lifeRankIcon[lifeContent.match]:SetMonoTone(false)
@@ -1031,6 +1039,16 @@ function ShowUseTab_Func()
 	else
 		useTab:SetShow( false )
 	end
+end
+
+function HideUseTab_Func()
+	local targetPanel = getSelfPlayer():get():getUIPanel()
+	if nil == targetPanel then
+		return
+	end
+	local useTab	= UI.getChildControl( targetPanel, "StaticText_UseTab" )				-- TAB 누르세요
+
+	useTab:SetShow( false )
 end
 
 function FGlobal_ShowUseLantern( param )
@@ -1702,6 +1720,9 @@ end
 
 local settingGuildMarkAndPreemptiveStrike = function( actorKeyRaw, targetPanel, actorProxyWrapper )
 	if nil == targetPanel then
+		return
+	end
+	if ( false == actorProxyWrapper:get():isPlayer() ) then
 		return
 	end
 	if actorProxyWrapper:get():isPetProxy() or actorProxyWrapper:get():isHouseHold() then
@@ -3317,7 +3338,7 @@ function FromClient_NotifyChangeGuildTendency( actorKeyRaw, panel, actorProxyWra
 end
 
 function FromClient_ChangeArenaAreaAndZoneState( actorProxyWrapper, panel, isStateOn )
-	if ( nil == actorProxyWrapper ) or ( nil == isStateOn ) then
+	if ( nil == actorProxyWrapper ) or ( nil == isStateOn ) or ( nil == panel ) then
 		return
 	end
 	local actorKeyRaw = actorProxyWrapper:get():getActorKeyRaw()
@@ -3344,7 +3365,38 @@ function FromClient_LocalWarCombatPoint( actorkeyRaw )
 	end
 
 	local panel = playerActorWrapper:get():getUIPanel()
+	if ( nil == panel ) then
+		return
+	end
 	settingLocalWarCombatPoint(actorkeyRaw, panel, playerActorWrapper)
+end
+
+function FromClient_FlashBangStateChanged(actorKeyRaw, isFlashBangOn)
+	if ( nil == actorKeyRaw ) then
+		return
+	end
+	
+	local actorProxyWrapper = getActor(actorKeyRaw)
+	if ( nil == actorProxyWrapper ) then
+		return
+	end
+	
+	local panel = actorProxyWrapper:get():getUIPanel()
+	if ( nil == panel ) then
+		return
+	end
+	
+	local insertedArray = Array.new()
+	settingName( actorKeyRaw, panel, actorProxyWrapper )
+	settingAlias( actorKeyRaw, panel, actorProxyWrapper )
+	settingGuildInfo( actorKeyRaw, panel, actorProxyWrapper )
+	settingGuildMarkAndPreemptiveStrike( actorKeyRaw, panel, actorProxyWrapper )
+	settingLifeRankIcon( actorKeyRaw, panel, actorProxyWrapper, insertedArray )
+	if ( actorProxyWrapper:get():isPlayer() ) then
+		settingPlayerName( actorKeyRaw, panel, actorProxyWrapper )
+		settingLocalWarCombatPoint(actorKeyRaw, panel, actorProxyWrapper)
+	end
+	settingTitle( actorKeyRaw, panel, actorProxyWrapper )
 end
 
 registerEvent("EventActorCreated",							"EventActorCreated_NameTag")
@@ -3388,6 +3440,7 @@ registerEvent("FromClient_ChangeTopRankUser",				"FromClient_ChangeTopRankUser")
 
 registerEvent("FromClient_EventActorUpdateTitleKey",		"FromClient_EventActorUpdateTitleKey")
 registerEvent("FromClient_LocalWarCombatPoint",				"FromClient_LocalWarCombatPoint")
+registerEvent("FromClient_FlashBangStateChanged",			"FromClient_FlashBangStateChanged")
 
 -- pvp mode를 켰을 때!
 registerEvent("EventPvPModeChanged",						"EventActorPvpModeChange")

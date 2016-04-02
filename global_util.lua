@@ -606,6 +606,8 @@ function Chatting_MessageColor(msgChatType, msgNoticeType)
 	--	msgColor = UI_color.C_FF8EBD00	
 	elseif ( UI_CT.LocalWar == msgChatType ) then
 		msgColor = UI_color.C_FFB97FEF
+	elseif ( UI_CT.RolePlay == msgChatType ) then
+		msgColor = 4278236415					-- UI_color.C_FF00B4FF
 	end	
 
 	return msgColor

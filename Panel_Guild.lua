@@ -152,6 +152,14 @@ function GuildInfoPage:initialize()
 		return self._btnGuildDel:GetShow();
 	end
 	
+	if isGameTypeEnglish() then
+		self._txtGuildName	:SetShow( false )
+		self._txtMaster		:SetShow( false )
+	else
+		self._txtGuildName	:SetShow( false )
+		self._txtMaster		:SetShow( false )
+	end
+
 	self:SetShow(false)
 	
 	-- self._txtInfoHelp:SetTextMode( UI_TM.eTextMode_AutoWrap )
@@ -181,6 +189,20 @@ function GuildInfoPage:initialize()
 	
 	btn_GuildMasterMandateBG	:addInputEvent("Mouse_On",	"GuildSimplTooltips( true, 1 )")
 	btn_GuildMasterMandateBG	:addInputEvent("Mouse_Out",	"GuildSimplTooltips( false, 1 )")
+
+	if not isGameTypeEnglish() then
+		self._txtRGuildName			:addInputEvent("Mouse_On",	"GuildSimplTooltips( true, 4 )")
+		self._txtRGuildName			:addInputEvent("Mouse_Out",	"GuildSimplTooltips( false, 4 )")
+		self._txtRMaster			:addInputEvent("Mouse_On",	"GuildSimplTooltips( true, 5 )")
+		self._txtRMaster			:addInputEvent("Mouse_Out",	"GuildSimplTooltips( false, 5 )")
+		self._txtRGuildName			:setTooltipEventRegistFunc("GuildSimplTooltips( true, 4 )")
+		self._txtRMaster			:setTooltipEventRegistFunc("GuildSimplTooltips( true, 5 )")
+		self._txtRGuildName			:SetIgnore( false )
+		self._txtRMaster			:SetIgnore( false )
+	else
+		self._txtRGuildName			:SetIgnore( true )
+		self._txtRMaster			:SetIgnore( true )
+	end
 
 	btn_GuildMasterMandate		:setTooltipEventRegistFunc("GuildSimplTooltips( true, 0 )")
 	btn_GuildMasterMandateBG	:setTooltipEventRegistFunc("GuildSimplTooltips( true, 1 )")
@@ -352,10 +374,13 @@ function GuildInfoPage:UpdateData()
 		local skillPointInfo = getSkillPointInfo( 3 )
 		self._txtRGuildName			:SetText( myGuildInfo:getName() )
 		self._txtRRank				:SetText( guildRankString )
+		self._txtRRank:SetSpanSize( self._txtRRank_Title:GetSpanSize().x+self._txtRRank_Title:GetTextSizeX()+10, self._txtRRank:GetSpanSize().y )
 		self._txtRMaster			:SetText( myGuildInfo:getGuildMasterName() )
 		-- self._txtRTendency			:SetText( myGuildInfo:getGuildTendency() )
 		self._txtRPersonNo			:SetText( myGuildInfo:getMemberCount().."/".. myGuildInfo:getJoinableMemberCount() )
+		self._txtRPersonNo:SetSpanSize( self._txtPersonNo:GetSpanSize().x+self._txtPersonNo:GetTextSizeX()+10, self._txtRPersonNo:GetSpanSize().y )
 		self._txtProtectValue		:SetText( myGuildInfo:getProtectGuildMemberCount().."/".. myGuildInfo:getAvaiableProtectGuildMemberCount() )
+		self._txtProtectValue:SetSpanSize( self._txtProtect:GetSpanSize().x+self._txtProtect:GetTextSizeX(), self._txtProtectValue:GetSpanSize().y )
 		self._txtGuildPointValue	:SetText( tostring(skillPointInfo._remainPoint) .. "/" .. tostring(skillPointInfo._acquirePoint-1)  );	-- 임시로 -1시켜놨음 함수자체에서 변경되면 -1제거할 것.
 		self._txtGuildPointPercent	:SetText( "( "..string.format("%.0f" , (skillPointInfo._currentExp / skillPointInfo._nextLevelExp) * 100 ).."% )" )
 		self._progressSkillPoint	:SetProgressRate( (skillPointInfo._currentExp / skillPointInfo._nextLevelExp) * 100 )
@@ -387,6 +412,8 @@ function GuildInfoPage:UpdateData()
 		self._progressMpPoint		:SetProgressRate( (currentGuildMp / maxGuildMp) * 100 )
 		local getGuildMoney = myGuildInfo:getGuildBusinessFunds_s64()
 		self._txtGuildMoney			:SetText( makeDotMoney(getGuildMoney) )
+
+		self._txtGuildMoney:SetSpanSize( self._txtGuildMoneyTitle:GetSpanSize().x+self._txtGuildMoneyTitle:GetTextSizeX()+10, self._txtGuildMoney:GetSpanSize().y )
 
 		if( toInt64(0, 0) < myGuildInfo:getAccumulateTax() ) then
 			self._txtUnpaidTax:SetText( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_GUILD_TEXT_GUILD_UNPAIDTAX", "getAccumulateTax", tostring( myGuildInfo:getAccumulateTax() ) ) ) -- 미납 법인세 내역
@@ -443,7 +470,7 @@ GuildLetsWarPage
 -- 초기화
 function GuildLetsWarPage:initialize()
 	self._letsWarBG				= UI.getChildControl ( Panel_Guild_Declaration, "Static_Menu_BG_2")			
-	-- self._txtLetsWarTitle 		= UI.getChildControl ( Panel_Guild_Declaration, "StaticText_Title_LetsWar" )
+	self._txtLetsWarTitle 		= UI.getChildControl ( Panel_Guild_Declaration, "StaticText_Title" )
 	self._btnLetsWarDoWar 		= UI.getChildControl ( Panel_Guild_Declaration, "Button_LetsWar" )
 	self._editLetsWarInputName 	= UI.getChildControl ( Panel_Guild_Declaration, "Edit_InputGuild" )
 	self._txtLetsWarHelp 		= UI.getChildControl ( Panel_Guild_Declaration, "StaticText_WarDesc_help" )
@@ -472,6 +499,9 @@ function GuildLetsWarPage:initialize()
 		self._txtLetsWarHelp:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_GUILD_TEXT_LETSWARHELP" ) )
 	end
 	
+	Panel_Guild_Declaration:SetSize(Panel_Guild_Declaration:GetSizeX(), self._txtLetsWarHelp:GetTextSizeY()+10+self._txtLetsWarTitle:GetSizeY()+self._btnLetsWarDoWar:GetSizeY()+50)
+	self._letsWarBG:SetSize( self._letsWarBG:GetSizeX(), self._txtLetsWarHelp:GetTextSizeY()+50 )
+	self._txtLetsWarHelp:SetSize( self._txtLetsWarHelp:GetSizeX(), self._txtLetsWarHelp:GetTextSizeY()+10 )
 	self._btnLetsWarDoWar		:addInputEvent("Mouse_LUp", "HandleClickedLetsWar()")
 	self._editLetsWarInputName	:addInputEvent("Mouse_LUp", "HandleClickedLetsWarEditName()")
 	self._btnCose				:addInputEvent("Mouse_LUp", "HandleClicked_LetsWarHide()")
@@ -624,12 +654,22 @@ function GuildWarInfoPage:initialize()
 
 	self._static_WarInfoBG	:SetSpanSize( 0, self._txtWarInfoTitle:GetSizeY() + 25 )
 	self._static_WarInfoBG	:ComputePos()
+	if isGameTypeEnglish() then
+		self._btnWarList1		:SetSize( 100, 23 )
+		self._btnWarList2		:SetSize( 100, 23 )
+		self._btnDeclaration	:SetSize( 120, 23 )
+		self._btnDeclaration	:SetSpanSize( 220, 22 )
+	else
+		self._btnWarList1		:SetSize( 70, 23 )
+		self._btnWarList2		:SetSize( 70, 23 )
+		self._btnDeclaration	:SetSize( 100, 23 )
+		self._btnDeclaration	:SetSpanSize( 240, 22 )
+	end
 	self._btnWarList1		:SetPosX( 10 )
 	self._btnWarList1		:SetPosY( 23 )
 	self._btnWarList2		:SetPosX( self._btnWarList1:GetPosX() + self._btnWarList1:GetSizeX() )
 	self._btnWarList2		:SetPosY( 23 )
 
-	self._btnDeclaration	:SetSpanSize( 240,22 )
 	self._btnDeclaration	:ComputePos()
 
 	self._static_WarInfoBG	:AddChild( self._txtNoWar )
@@ -1228,6 +1268,12 @@ function GuildSimplTooltips( isShow, tipType )
 			desc = PAGetString(Defines.StringSheet_GAME, "LUA_GUILD_GUILDDEL_BTN_TOOLTIP_DESC2") -- 길드를 탈퇴할 수 있습니다.\n길드를 탈퇴하게되면 24시간 동안 길드 가입이 제한됩니다.
 		end
 		control	= GuildInfoPage._btnGuildDel
+	elseif 4 == tipType then
+		name = "길드 이름"
+		control = GuildInfoPage._txtRGuildName
+	elseif 5 == tipType then
+		name = "길드 대장 가문명"
+		control = GuildInfoPage._txtRMaster
 	end
 
 	registTooltipControl(control, Panel_Tooltip_SimpleText)
@@ -1596,12 +1642,16 @@ function GuildMainInfo_Show()
 	notice_edit										:SetShow( true )
 
 	introduce_edit									:SetShow( true )
-
-	GuildInfoPage._txtMaster						:SetShow( true )
+	if isGameTypeEnglish() then
+		GuildInfoPage._txtMaster						:SetShow( false )
+		GuildInfoPage._txtGuildName						:SetShow( false )
+	else
+		GuildInfoPage._txtMaster						:SetShow( true )
+		GuildInfoPage._txtGuildName						:SetShow( true )
+	end
 	GuildInfoPage._textGuildInfoTitle				:SetShow( true )
 	GuildInfoPage._guildMainBG						:SetShow( true )
 	GuildInfoPage._iconGuildMark					:SetShow( true )
-	GuildInfoPage._txtGuildName						:SetShow( true )
 	GuildInfoPage._txtRGuildName					:SetShow( true )
 	GuildInfoPage._txtRMaster						:SetShow( true )
 	GuildInfoPage._txtRRank_Title					:SetShow( true )
@@ -1980,7 +2030,7 @@ function FromClient_ResponseUpdateGuildContract( notifyType, userNickName, chara
 		end
 		
 		Proc_ShowMessage_Ack( text )
-		GuildListInfoPage:initialize()	-- 만들었으니까. 생성해준다.
+		-- GuildListInfoPage:initialize()	-- 만들었으니까. 생성해준다.
 	
 	elseif( 17 == notifyType ) then
 		local text = PAGetString( Defines.StringSheet_GAME, "LUA_GUILD_ACCEPT_GUILDQUEST" );
@@ -2683,7 +2733,13 @@ function FGlobal_Notice_AuthorizationUpdate()
 	local isGuildSubMaster	= getSelfPlayer():get():isGuildSubMaster()
 
 	if (true == isGuildMaster) or (true == isGuildSubMaster) then
-		notice_edit:SetSize( 550, 28 )
+		if isGameTypeEnglish() then
+			notice_edit:SetSize( 500, 28 )
+			notice_btn:SetSize( 100, 30 )
+		else
+			notice_edit:SetSize( 550, 28 )
+			notice_btn:SetSize( 50, 30 )
+		end
 		notice_edit:SetIgnore( false )
 		-- notice_btn:SetShow( true )
 	else

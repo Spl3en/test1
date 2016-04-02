@@ -21,6 +21,12 @@ local CreateClan = {
 	selectedClan	= UI.getChildControl( Panel_CreateClan, "RadioButton_Clan" ),
 	selectedGuild	= UI.getChildControl( Panel_CreateClan, "RadioButton_Guild" ),
 	create			= UI.getChildControl( Panel_CreateClan, "Button_Confirm" ),
+
+	createDescBG	= UI.getChildControl( Panel_CreateClan, "Static_CreateClanDescBG"),
+
+	guideMainBaseBG	= UI.getChildControl( Panel_CreateClan, "Static_BaseBG"),
+
+	guideMainBG		= UI.getChildControl( Panel_CreateClan, "Static_SelectedTypeDescBG"),
 	guideTitle		= UI.getChildControl( Panel_CreateClan, "StaticText_SelectedTypeTitle" ),
 	guideDesc		= UI.getChildControl( Panel_CreateClan, "StaticText_SelectedTypeDesc" ),
 
@@ -48,6 +54,7 @@ end
 
 local GuildCreateManager = {
 	-- 길드 관리 창 내부 창설 버튼 클릭시 뜨는 창 관련 컨트롤--
+	_createGuildBG		= UI.getChildControl( Panel_CreateGuild, "Static_BG"),
 	_buttonApply		= UI.getChildControl( Panel_CreateGuild, "Button_Confirm" ),
 	_buttonCancel		= UI.getChildControl( Panel_CreateGuild, "Button_Cancel" ),
 	_editGuildNameInput = UI.getChildControl( Panel_CreateGuild, "Edit_GuildName" ),
@@ -69,6 +76,7 @@ function GuildCreateManager:initialize()
 end
 
 function CreateClan:initialize()
+	self.guideDesc:SetTextMode( UI_TM.eTextMode_AutoWrap )
 	self.guideTitle		:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_CREATECLAN_GUIDETITLE_CLAN") )
 	self.guideDesc		:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_CREATECLAN_GUIDEDESC_CLAN") )
 end
@@ -118,8 +126,13 @@ function Guild_PopupCreate( guildGrade )
 		GuildCreateManager._editGuildNameInput:SetMonoTone(false)
 
 		GuildCreateManager._txt_NameDesc:SetTextMode( UI_TM.eTextMode_AutoWrap )
-		GuildCreateManager._txt_NameDesc:SetText( PAGetString( Defines.StringSheet_GAME, "LUA_GUILD_POPUP_1" ))
-		
+		GuildCreateManager._txt_NameDesc:SetText( PAGetString( Defines.StringSheet_GAME, "LUA_GUILD_POPUP_1" ) )
+
+		GuildCreateManager._createGuildBG:SetSize(GuildCreateManager._createGuildBG:GetSizeX(), GuildCreateManager._txt_NameDesc:GetTextSizeY()+GuildCreateManager._editGuildNameInput:GetSizeY()+40)
+		Panel_CreateGuild:SetSize(Panel_CreateGuild:GetSizeX(), GuildCreateManager._txt_NameDesc:GetTextSizeY()+GuildCreateManager._editGuildNameInput:GetSizeY()+140)
+		GuildCreateManager._buttonApply:SetSpanSize( GuildCreateManager._buttonApply:GetSpanSize().x, 10 )
+		GuildCreateManager._buttonCancel:SetSpanSize( GuildCreateManager._buttonCancel:GetSpanSize().x, 10 )
+
 		GuildCreateManager._buttonApply:SetText(PAGetString( Defines.StringSheet_RESOURCE, "EXCHANGE_NUMBER_BTN_APPLY"))
 		GuildCreateManager._buttonCancel:SetText(PAGetString( Defines.StringSheet_RESOURCE, "EXCHANGE_NUMBER_BTN_CANCEL"))
 
@@ -259,6 +272,11 @@ function CreateClan_SelectGroupType()
 
 	self.guideTitle:SetText( title )
 	self.guideDesc:SetText( desc )
+
+	self.guideMainBaseBG:SetSize( self.guideMainBaseBG:GetSizeX(), self.guideDesc:GetTextSizeY()+self.guideTitle:GetTextSizeY()+self.createDescBG:GetSizeY()+self.selectedClan:GetSizeY()+100 )
+	self.guideMainBG:SetSize( self.guideMainBG:GetSizeX(), self.guideDesc:GetTextSizeY()+self.guideTitle:GetTextSizeY()+20 )
+	Panel_CreateClan:SetSize( Panel_CreateClan:GetSizeX(), self.guideDesc:GetTextSizeY()+self.guideTitle:GetTextSizeY()+self.selectedClan:GetSizeY()+260)
+	self.create:SetSpanSize(self.create:GetSpanSize().x, 20)
 end
 
 
@@ -321,6 +339,7 @@ function CreateClan_Open()
 	-- { 노출 정보 설정}
 		local title = ""
 		local desc = ""
+		self.guideDesc:SetTextMode( UI_TM.eTextMode_AutoWrap )
 		if self.selectedClan:IsCheck() then
 			title	= PAGetString(Defines.StringSheet_GAME, "LUA_CREATECLAN_GUIDETITLE_CLAN")
 			desc	= PAGetString(Defines.StringSheet_GAME, "LUA_CREATECLAN_GUIDEDESC_CLAN")
@@ -332,6 +351,11 @@ function CreateClan_Open()
 		self.guideTitle		:SetText( title )
 		self.guideDesc		:SetText( desc )
 	-- }
+
+	self.guideMainBaseBG:SetSize( self.guideMainBaseBG:GetSizeX(), self.guideDesc:GetTextSizeY()+self.guideTitle:GetTextSizeY()+self.createDescBG:GetSizeY()+self.selectedClan:GetSizeY()+100 )
+	self.guideMainBG:SetSize( self.guideMainBG:GetSizeX(), self.guideDesc:GetTextSizeY()+self.guideTitle:GetTextSizeY()+20 )
+	Panel_CreateClan:SetSize( Panel_CreateClan:GetSizeX(), self.guideDesc:GetTextSizeY()+self.guideTitle:GetTextSizeY()+self.selectedClan:GetSizeY()+260)
+	self.create:SetSpanSize(self.create:GetSpanSize().x, 20)
 
 	Panel_CreateClan:SetShow( true )
 end

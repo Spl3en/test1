@@ -720,10 +720,10 @@ function	Inventory_SlotRClick( index, equipSlotNo )
 	end
 	local	self			= inven
 	local	slotNo			= self.slots[index]._slotNo
-	Inventory_SlotRClickXXX( slotNo, equipSlotNo )
+	Inventory_SlotRClickXXX( slotNo, equipSlotNo, index )
 end
 
-function	Inventory_SlotRClickXXX( slotNo, equipSlotNo )
+function	Inventory_SlotRClickXXX( slotNo, equipSlotNo, index )
 	local	self			= inven
 	local	selfProxy		= getSelfPlayer():get()
 	local	inventoryType	= Inventory_GetCurrentInventoryType()
@@ -795,11 +795,12 @@ function	Inventory_SlotRClickXXX( slotNo, equipSlotNo )
 				-- Panel_Invertory_Manufacture_BG:SetShow( true )
 				Panel_Invertory_Manufacture_BG:SetShow( true )
 				Panel_Tooltip_Item_Show_GeneralNormal(slotNo, "inventory", false)			-- 툴팁 꺼줌
-				
 				local row = math.floor( (slotNo - 1) / inven.config.slotCols )
 				local col = (slotNo - 1) % inven.config.slotCols
-				Panel_Invertory_Manufacture_BG:SetPosX( getMousePosX() - 120)
-				Panel_Invertory_Manufacture_BG:SetPosY( getMousePosY() )
+				-- Panel_Invertory_Manufacture_BG:SetPosX( getMousePosX() - 120)
+				-- Panel_Invertory_Manufacture_BG:SetPosY( getMousePosY() )
+				Panel_Invertory_Manufacture_BG:SetPosX( self.slots[index].icon:GetParentPosX()-42 )
+				Panel_Invertory_Manufacture_BG:SetPosY( self.slots[index].icon:GetParentPosY()+42 )
 				radioButtonManu:SetPosX( 4 )
 				radioButtonManu:SetPosY( 4 )
 				radioButtonNote:SetPosX( 4 )
@@ -819,6 +820,8 @@ function	Inventory_SlotRClickXXX( slotNo, equipSlotNo )
 				radioButtonNote:addInputEvent( "Mouse_LUp", "Note_On("..itemWrapper:get():getKey():getItemKey()..")" )
 				radioButtonManu:addInputEvent( "Mouse_RUp", "Manufacture_Off()" )
 				radioButtonNote:addInputEvent( "Mouse_RUp", "Manufacture_Off()" )
+				radioButtonNote:addInputEvent( "Mouse_Out", "Manufacture_Off()" )
+				radioButtonManu:addInputEvent( "Mouse_Out", "Manufacture_Off()" )
 				Panel_Invertory_Manufacture_BG:addInputEvent("Mouse_Out", "Manufacture_Off()")
 				--Panel_Manufacture:SetShow(true, true)
 			--end
@@ -844,8 +847,10 @@ function	Inventory_SlotRClickXXX( slotNo, equipSlotNo )
 								
 				local row = math.floor( (slotNo - 1) / inven.config.slotCols )
 				local col = (slotNo - 1) % inven.config.slotCols
-				Panel_Invertory_ExchangeButton:SetPosX( getMousePosX() - 120)
-				Panel_Invertory_ExchangeButton:SetPosY( getMousePosY() )
+				-- Panel_Invertory_ExchangeButton:SetPosX( getMousePosX() - 120)
+				-- Panel_Invertory_ExchangeButton:SetPosY( getMousePosY() )
+				Panel_Invertory_ExchangeButton:SetPosX( self.slots[index].icon:GetParentPosX()-42 )
+				Panel_Invertory_ExchangeButton:SetPosY( self.slots[index].icon:GetParentPosY()+42 )
 				
 				local _btn_WayPoint			= UI.getChildControl( Panel_Invertory_ExchangeButton, "Button_WayPoint")
 				local _btn_Widget			= UI.getChildControl( Panel_Invertory_ExchangeButton, "Button_Widget")				
@@ -856,6 +861,8 @@ function	Inventory_SlotRClickXXX( slotNo, equipSlotNo )
 				_btn_Widget		:SetPosY( 38 )
 
 				_btn_WayPoint					:addInputEvent("Mouse_LUp", "HandleClickedWayPoint( " .. slotNo .. " )" )
+				_btn_WayPoint					:addInputEvent("Mouse_Out", "ExchangeButton_Off()" )
+				_btn_Widget						:addInputEvent("Mouse_Out", "ExchangeButton_Off()" )
 				_btn_Widget						:addInputEvent("Mouse_LUp", "HandleClickedWidget( " .. slotNo .. " )" )
 				Panel_Invertory_ExchangeButton	:addInputEvent("Mouse_Out", "ExchangeButton_Off()")
 			elseif 	not itemStatic:isUseToVehicle()	then						-- 먹이는 Interaction을 통한 아이템 인벤토리창에서만 사용 할 수 있다.
@@ -2184,7 +2191,10 @@ function	Inventory_UseItemTargetSelf( whereType, slotNo, equipSlotNo )
 	-- 길찾기 아이템 우클릭 시 효과음 출력. 조건이 없어 일단 아이템키로 비교
 	local currentWhereType	= Inventory_GetCurrentInventoryType()
 	local itemWrapper	= getInventoryItemByType( currentWhereType, slotNo )
-	local itemKey = itemWrapper:get():getKey():getItemKey()
+	if nil == itemWrapper then
+		return
+	end
+	local itemKey		= itemWrapper:get():getKey():getItemKey()
 
 	if ( 41548 <= itemKey and 41570 >= itemKey ) or ( 42000 <= itemKey and 42010 >= itemKey ) or ( 42034 <= itemKey and 42040 >= itemKey )
 		or ( 42053 == itemKey ) or ( 42054 == itemKey ) then
@@ -2616,6 +2626,27 @@ function Inventory_ManufactureBTN()
 		return
 	end
 end
+
+-- function FGlobal_RecentCookItemCheck( itemKey, itemCount )
+-- 	local self = inven
+-- 	local saveInfo = {}
+-- 	local	useStartSlot	= inventorySlotNoUserStart()
+-- 	local returnSlotNo = nil
+-- 	for i=0, self.config.slotCount -1 do
+-- 		local slotNo = i + useStartSlot
+-- 		local itemWrapper		= getInventoryItemByType( CppEnums.ItemWhereType.eInventory, slotNo )
+-- 		if nil ~= itemWrapper then
+-- 			local itemSSW = itemWrapper:getStaticStatus()
+-- 			local invenItemKey = itemSSW:get()._key:getItemKey()
+-- 			-- _PA_LOG("정태곤", "itemKey : " .. tostring(itemKey) .. " / invenItemKey : " .. tostring(invenItemKey))
+-- 			if itemKey == invenItemKey then
+-- 				saveInfo.slotNo = slotNo
+-- 				returnSlotNo = slotNo
+-- 			end
+-- 		end
+-- 	end
+-- 	return returnSlotNo
+-- end
 
 function inventory_FlushRestoreFunc()
 	btn_Manufacture			:SetEnable( true )

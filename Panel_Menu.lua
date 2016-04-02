@@ -55,9 +55,10 @@ local MenuButtonId =
 	btn_Siege				= 31,				-- 점령전 현황
 	btn_LocalWar			= 32,				-- 붉은전장 현황
 	btn_GameOption			= 33,				-- 옵션
-	btn_Language			= 34,				-- 언어(북미 전용)
-	btn_Channel				= 35,				-- 채널 이동
-	btn_GameExit			= 36,				-- 종료
+	btn_ChattingFilter		= 34,				-- 채팅 필터
+	btn_Language			= 35,				-- 언어(북미 전용)
+	btn_Channel				= 36,				-- 채널 이동
+	btn_GameExit			= 37,				-- 종료
 }
 
 local MenuButtonTextId = 
@@ -98,6 +99,7 @@ local MenuButtonTextId =
 	[MenuButtonId.btn_Notice]			= PAGetString(Defines.StringSheet_GAME, "CHATTING_NOTICE"),									-- 공지사항
 	[MenuButtonId.btn_LocalWar]			= PAGetString(Defines.StringSheet_GAME, "LUA_MENU_LOCALWAR_INFO"),							-- 전장 현황
 	[MenuButtonId.btn_Itemmarket]		= PAGetString(Defines.StringSheet_GAME, "LUA_MENU_ITEMMARKET"),								-- 거래소
+	[MenuButtonId.btn_ChattingFilter]	= PAGetString(Defines.StringSheet_GAME, "LUA_MENU_CHATTING_FILTER"),						-- 채팅 필터	
 }
 
 local MenuButtonHotKeyID =
@@ -138,6 +140,7 @@ local MenuButtonHotKeyID =
 	[MenuButtonId.btn_Notice]			= "",
 	[MenuButtonId.btn_LocalWar]			= "",
 	[MenuButtonId.btn_Itemmarket]		= "",
+	[MenuButtonId.btn_ChattingFilter]	= "",
 }
 
 local contry = {
@@ -176,11 +179,13 @@ local menuIcon			= UI.getChildControl( Panel_Menu, "StaticText_MenuIcon" )
 local menuBadge			= UI.getChildControl( Panel_CheckedQuest, "StaticText_Number" )
 local menuHotkey		= UI.getChildControl( Panel_Menu, "StaticText_MenuHotkey" )
 local menuTitleBar		= UI.getChildControl( Panel_Menu, "StaticText_Title" )
+local menuText			= UI.getChildControl( Panel_Menu, "StaticText_MenuText" )
 
 local maxButtonCount	= #MenuButtonTextId
 local menuButtonBG		= {}
 local menuButtonIcon	= {}
 local menuBadgePool		= {}
+local menuTextPool		= {}
 local menuButtonHotkey	= {}
 local iconBgPosX		= menuIconBg:GetPosX()
 local iconBgPosY		= menuIconBg:GetPosY()
@@ -224,6 +229,7 @@ local buttonTexture = {
 	[MenuButtonId.btn_Notice]			= { 186,	403,	230,	447 },
 	[MenuButtonId.btn_LocalWar]			= { 202,	403,	276,	447 },
 	[MenuButtonId.btn_Itemmarket]		= { 2,		449,	46,		493 },
+	[MenuButtonId.btn_ChattingFilter]	= { 278,	449,	322,	493 },
 }
 
 
@@ -328,6 +334,10 @@ function TargetWindow_ShowToggle( index )
 	elseif MenuButtonId.btn_Itemmarket == index then
 		FGlobal_ItemMarket_Open_ForWorldMap(1,true)
 		audioPostEvent_SystemUi(01,30)
+	elseif MenuButtonId.btn_ChattingFilter == index then
+		if isGameTypeEnglish() or isGameServiceTypeDev() then
+			FGlobal_ChattingFilterList_Open()
+		end
 	end
 	if Panel_Menu:GetShow() then
 		Panel_Menu:SetShow( false, false )
@@ -407,30 +417,26 @@ function GameMenu_Init()
 			badgeIcon:SetPosY( 5 )
 			menuBadgePool[index] = badgeIcon
 			menuBadgePool[index]:SetShow( false )
-			
-			-- if 1 == index then													-- 도움말(F1)은 가운데 정렬할 경우 슬롯을 벗어나므로 강제로 텍스트 위치를 잡아준다!!!
-			-- 	if isGameTypeKorea() then
-			-- 		menuButtonIcon[index]:SetTextHorizonLeft()
-			-- 		menuButtonIcon[index]:SetTextSpan( 7, 42 )
-			-- 	else
-			-- 		menuButtonIcon[index]:SetTextHorizonLeft()
-			-- 		menuButtonIcon[index]:SetTextSpan( 9, 42 )
-			-- 	end
-			-- else
-			-- 	menuButtonIcon[index]:SetTextHorizonCenter()
-			-- end
 
-			if isGameTypeEnglish() then
+			local tempText	= UI.createControl( UI_PUCT.PA_UI_CONTROL_STATICTEXT, menuButtonBG[index], "StaticText_MenuText_" .. index )
+			CopyBaseProperty( menuText, tempText )
+			tempText:SetTextMode( UI_TM.eTextMode_AutoWrap )
+			menuTextPool[index] = tempText
+			menuTextPool[index]:SetShow( true )
+			menuTextPool[index]:ComputePos()
+
+			if not isGameTypeEnglish() then
 				menuButtonIcon[index]:SetTextMode( UI_TM.eTextMode_AutoWrap )
 				menuButtonIcon[index]:SetSize( 70, 70 )
 				menuButtonIcon[index]:SetTextVerticalBottom()
 				menuButtonIcon[index]:SetTextSpan( 0, -3 )
 			else
 				menuButtonIcon[index]:SetSize( 44, 44 )
-				menuButtonIcon[index]:SetTextVerticalTop()
-				menuButtonIcon[index]:SetTextSpan( 0, 42 )
+				-- menuButtonIcon[index]:SetSpanSize( menuButtonIcon[index]:GetSpanSize().x, 15 )
+				menuTextPool[index]:SetSize( 70, menuTextPool[index]:GetSizeY() )
+				menuTextPool[index]:SetSpanSize( 0, 55 )
 			end
-			menuButtonIcon[index]:SetText( MenuButtonTextId[index] )
+			menuTextPool[index]:SetText( MenuButtonTextId[index] )
 			GameMenu_ChangeButtonTexture( index )	-- 버튼 텍스쳐 변경
 			
 			if ( 0 == posIndex % columnCountByRaw ) then	-- 유료화 처리용 posIndex
@@ -520,6 +526,15 @@ function GameMenu_CheckEnAble( buttonType )
 		end
 	end
 	
+	-- 북미/개발만 언어 버튼을 넣는다.
+	if buttonType == MenuButtonId.btn_Language or buttonType == MenuButtonId.btn_ChattingFilter then
+		if (isGameTypeEnglish() or isGameServiceTypeDev()) then
+			returnValue = true
+		else
+			returnValue = false
+		end
+	end
+	
 	return returnValue
 end
 
@@ -545,10 +560,10 @@ function GameMenu_ChangeButtonTexture( index )
 	elseif index == MenuButtonId.btn_LocalWar then
 		if 0 == ToClient_GetMyTeamNoLocalWar() then
 			x1, y1, x2, y2 = setTextureUV_Func( menuButtonIcon[index], 232, 403, 276, 447 )
-			menuButtonIcon[MenuButtonId.btn_LocalWar]:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_MENU_LOCALWAR_INFO") ) -- 전장 현황
+			menuTextPool[MenuButtonId.btn_LocalWar]:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_MENU_LOCALWAR_INFO") ) -- 전장 현황
 		else
 			x1, y1, x2, y2 = setTextureUV_Func( menuButtonIcon[index], 232, 449, 276, 493 )
-			menuButtonIcon[MenuButtonId.btn_LocalWar]:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_MENU_LOCALWAR_GETOUT") ) -- 전장 이탈
+			menuTextPool[MenuButtonId.btn_LocalWar]:SetText( PAGetString(Defines.StringSheet_GAME, "LUA_MENU_LOCALWAR_GETOUT") ) -- 전장 이탈
 		end
 	else
 		x1, y1, x2, y2 = setTextureUV_Func( menuButtonIcon[index], buttonTexture[index][1], buttonTexture[index][2], buttonTexture[index][3], buttonTexture[index][4] )	

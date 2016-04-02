@@ -58,7 +58,8 @@ local chatInput =
 		-- [10] =	nil,
 		-- [11] =	nil,
 		[12] =	'Button_WorldWithItem',	-- WorldServerChat(With Cash)
-		[14] =	'Button_LocalWar'
+		[14] =	'Button_LocalWar',
+		[15] =	'Button_RolePlay',
 	},
 	permissions = Array.new(),
 	lastChatType = UI_CT.Public,
@@ -134,6 +135,7 @@ local chatShortCutKey =
 	-- VCK.KeyCode_7,	-- 매매				
 	-1,
 	VCK.KeyCode_7,
+	VCK.KeyCode_8,		-- 북미/롤플레이
 }
 
 local chatShortCutKey_Value = 
@@ -152,6 +154,7 @@ local chatShortCutKey_Value =
 	6,		-- 서버 전체 메시지(템사용)
 	-1,
 	7,
+	8,
 }
 chatInput.control.dragButton:SetShow(false)
 
@@ -200,6 +203,14 @@ function chatInput:init()
 			button:SetShow( false )
 			self.control.buttons[idx] = button
 		end
+	end
+
+	if isGameTypeKorea() then
+		self.maxEditInput = 100
+	elseif isGameTypeEnglish() then
+		self.maxEditInput = 350
+	else
+		self.maxEditInput = 100
 	end
 
 	self.control.buttons[ self.lastChatType ]:SetShow( true )
@@ -370,8 +381,21 @@ function ChatInput_UpdatePermission()
 		self.permissions[ UI_CT.World ] = true
 		self.permissions[ UI_CT.Public ] = true
 		self.permissions[ UI_CT.Private ] = true
-		if isGameTypeKorea() then
+		if isGameServiceTypeDev() then
 			self.permissions[ UI_CT.WorldWithItem ] = true
+			self.permissions[ UI_CT.RolePlay ] = true
+		elseif isGameTypeKorea() then
+			self.permissions[ UI_CT.WorldWithItem ] = true
+		elseif isGameTypeJapan() then
+			self.permissions[ UI_CT.WorldWithItem ] = true
+		elseif isGameTypeEnglish() then
+			local myLevel = getSelfPlayer():get():getLevel()
+			if myLevel < 20 then
+				self.permissions[ UI_CT.WorldWithItem ] = false
+			else
+				self.permissions[ UI_CT.WorldWithItem ] = true
+			end
+			self.permissions[ UI_CT.RolePlay ] = true
 		else
 			self.permissions[ UI_CT.WorldWithItem ] = false
 		end

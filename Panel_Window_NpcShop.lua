@@ -1096,7 +1096,17 @@ function Panel_NpcShop_InvenFilter_IsExchangeItem(slotNo, itemWrapper)
 	if nil == itemWrapper then
 		return true
 	end
-	local isAble = npcShop_IsItemExchangeWithSystem(itemWrapper:get():getKey());
+	local isVested			= itemWrapper:get():isVested()
+	local isPersonalTrade	= itemWrapper:getStaticStatus():isPersonalTrade()
+
+	if (isUsePcExchangeInLocalizingValue()) then
+		local isFilter = ( isVested and isPersonalTrade )
+		if( isFilter ) then
+			return isFilter
+		end
+	end
+
+	local isAble = npcShop_IsItemExchangeWithSystem(itemWrapper:get():getKey())
 	return (not isAble);
 end
 

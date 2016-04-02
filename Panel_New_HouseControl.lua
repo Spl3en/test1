@@ -2483,7 +2483,7 @@ local houseTextureList = {
 	[CppEnums.eHouseUseType.HorseArmorWorkshop			] = { path = "new_ui_common_forlua/Window/HouseInfo/HouseIcon.dds", pos = {173, 44, 215, 86} },	-- 마구 제작소
 	[CppEnums.eHouseUseType.FurnitureWorkshop			] = { path = "new_ui_common_forlua/Window/HouseInfo/HouseIcon.dds", pos = {216, 44, 258, 86} },	-- 가구 공방
 	[CppEnums.eHouseUseType.LocalSpecailtiesWorkshop	] = { path = "new_ui_common_forlua/Window/HouseInfo/HouseIcon.dds", pos = {259, 44, 301, 86} },	-- 특산물 가공소
-	[CppEnums.eHouseUseType.Wardrobe					] = { path = "new_ui_common_forlua/Window/HouseInfo/HouseIcon.dds", pos = {388, 44, 430, 86} },	-- 의상실
+	[CppEnums.eHouseUseType.Wardrobe					] = { path = "new_ui_common_forlua/Window/HouseInfo/HouseIcon.dds", pos = {345, 259, 387, 301} },	-- 의상실
 	[CppEnums.eHouseUseType.SiegeWeapons				] = { path = "new_ui_common_forlua/Window/HouseInfo/HouseIcon.dds", pos = {431, 44, 473, 86} },	-- 공성무기
 	[CppEnums.eHouseUseType.ShipParts					] = { path = "new_ui_common_forlua/Window/HouseInfo/HouseIcon.dds", pos = {388, 44, 430, 86} },	-- 선박부품
 	[CppEnums.eHouseUseType.WagonParts					] = { path = "new_ui_common_forlua/Window/HouseInfo/HouseIcon.dds", pos = {345, 44, 387, 86} },	-- 마차부품

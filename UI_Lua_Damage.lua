@@ -536,19 +536,36 @@ function DamageOutputFunction_OnDamage( attakeeKeyRaw, effectNumber, effectType,
 			
 		elseif ( 1 == additionalDamageType ) then
 			-- UI.debugMessage('카운터 어택')
-			if attackeeIsSelfPlayer then
-				target.effectList[8]:AddEffect( "Ui_Damage_Counter", false, 0, 0 )
-				render_setPointBlur( 0.04, 0.03 )
-				render_setColorBypass( 0.8, 0.15 )
-				render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+			if ( 1 == effectType ) then
+				if attackeeIsSelfPlayer then
+					target.effectList[8]:AddEffect( "Ui_Damage_CriticalCounter_Red", false, 0, 0 )
+					render_setPointBlur( 0.04, 0.03 )
+					render_setColorBypass( 0.8, 0.15 )
+					render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+				else
+					target.effectList[8]:AddEffect( "Ui_Damage_CriticalCounter_White", false, 0, 0 )
+					-- ♬ 카운터 어택 사운드!
+					audioPostEvent_SystemUi(14,02)
+					-- audioPostEvent_SystemUi(14,01)
+					render_setChromaticBlur( 65, 0.15 )
+					render_setPointBlur( 0.025, 0.03 )
+					render_setColorBypass( 0.3, 0.08 )
+				end
 			else
-				target.effectList[8]:AddEffect( "Ui_Damage_Counter", false, 0, 0 )
-				-- ♬ 카운터 어택 사운드!
-				audioPostEvent_SystemUi(14,02)
-				-- audioPostEvent_SystemUi(14,01)
-				render_setChromaticBlur( 65, 0.15 )
-				render_setPointBlur( 0.025, 0.03 )
-				render_setColorBypass( 0.3, 0.08 )
+				if attackeeIsSelfPlayer then
+					target.effectList[8]:AddEffect( "Ui_Damage_Counter", false, 0, 0 )
+					render_setPointBlur( 0.04, 0.03 )
+					render_setColorBypass( 0.8, 0.15 )
+					render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+				else
+					target.effectList[8]:AddEffect( "Ui_Damage_Counter", false, 0, 0 )
+					-- ♬ 카운터 어택 사운드!
+					audioPostEvent_SystemUi(14,02)
+					-- audioPostEvent_SystemUi(14,01)
+					render_setChromaticBlur( 65, 0.15 )
+					render_setPointBlur( 0.025, 0.03 )
+					render_setColorBypass( 0.3, 0.08 )
+				end
 			end
 			CounterAttack_Show()
 			baseX = baseX - ( effectControlSetting[8]._sizeX ) / 2
@@ -556,53 +573,101 @@ function DamageOutputFunction_OnDamage( attakeeKeyRaw, effectNumber, effectType,
 			
 		elseif ( 2 == additionalDamageType ) then
 			-- UI.debugMessage('다운 어택')
-			if attackeeIsSelfPlayer then
-				target.effectList[9]:AddEffect( "Ui_Damage_Downattack", false, 0, 0 )
-				render_setPointBlur( 0.04, 0.03 )
-				render_setColorBypass( 0.8, 0.15 )
-				render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+			if ( 1 == effectType ) then
+				if attackeeIsSelfPlayer then
+					target.effectList[9]:AddEffect( "Ui_Damage_CriticalDownattack_Red", false, 0, 0 )
+					render_setPointBlur( 0.04, 0.03 )
+					render_setColorBypass( 0.8, 0.15 )
+					render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+				else
+					target.effectList[9]:AddEffect( "Ui_Damage_CriticalDownattack_White", false, 0, 0 )
+					-- ♬ 다운 어택 사운드!
+					audioPostEvent_SystemUi(14,03)
+					render_setChromaticBlur( 55, 0.15 )
+					render_setPointBlur( 0.025, 0.03 )
+					render_setColorBypass( 0.3, 0.08 )
+				end
 			else
-				target.effectList[9]:AddEffect( "Ui_Damage_Downattack", false, 0, 0 )
-				-- ♬ 다운 어택 사운드!
-				audioPostEvent_SystemUi(14,03)
-				render_setChromaticBlur( 55, 0.15 )
-				render_setPointBlur( 0.025, 0.03 )
-				render_setColorBypass( 0.3, 0.08 )
+				if attackeeIsSelfPlayer then
+					target.effectList[9]:AddEffect( "Ui_Damage_Downattack", false, 0, 0 )
+					render_setPointBlur( 0.04, 0.03 )
+					render_setColorBypass( 0.8, 0.15 )
+					render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+				else
+					target.effectList[9]:AddEffect( "Ui_Damage_Downattack", false, 0, 0 )
+					-- ♬ 다운 어택 사운드!
+					audioPostEvent_SystemUi(14,03)
+					render_setChromaticBlur( 55, 0.15 )
+					render_setPointBlur( 0.025, 0.03 )
+					render_setColorBypass( 0.3, 0.08 )
+				end
 			end
 			baseX = baseX - ( effectControlSetting[9]._sizeX ) / 2
 			SetAnimation_CounterAttack(target.effectList[9], baseX, baseY , timeRate)
 			
 		elseif ( 3 == additionalDamageType ) then
 			-- UI.debugMessage('스피드 어택')
-			if attackeeIsSelfPlayer then
-				target.effectList[10]:AddEffect( "Ui_Damage_Speedattack", false, 0, 0 )
-				render_setPointBlur( 0.04, 0.03 )
-				render_setColorBypass( 0.8, 0.15 )
-				render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+			if ( 1 == effectType ) then
+				if attackeeIsSelfPlayer then
+					target.effectList[10]:AddEffect( "Ui_Damage_CriticalSpeedattack_Red", false, 0, 0 )
+					render_setPointBlur( 0.04, 0.03 )
+					render_setColorBypass( 0.8, 0.15 )
+					render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+				else
+					target.effectList[10]:AddEffect( "Ui_Damage_CriticalSpeedattack_White", false, 0, 0 )
+					-- ♬ 스피드 어택 사운드!
+					audioPostEvent_SystemUi(14,04)
+					render_setChromaticBlur( 55, 0.15 )
+					render_setPointBlur( 0.025, 0.03 )
+					render_setColorBypass( 0.3, 0.08 )
+				end
 			else
-				target.effectList[10]:AddEffect( "Ui_Damage_Speedattack", false, 0, 0 )
-				-- ♬ 스피드 어택 사운드!
-				audioPostEvent_SystemUi(14,04)
-				render_setChromaticBlur( 55, 0.15 )
-				render_setPointBlur( 0.025, 0.03 )
-				render_setColorBypass( 0.3, 0.08 )
+				if attackeeIsSelfPlayer then
+					target.effectList[10]:AddEffect( "Ui_Damage_Speedattack", false, 0, 0 )
+					render_setPointBlur( 0.04, 0.03 )
+					render_setColorBypass( 0.8, 0.15 )
+					render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+				else
+					target.effectList[10]:AddEffect( "Ui_Damage_Speedattack", false, 0, 0 )
+					-- ♬ 스피드 어택 사운드!
+					audioPostEvent_SystemUi(14,04)
+					render_setChromaticBlur( 55, 0.15 )
+					render_setPointBlur( 0.025, 0.03 )
+					render_setColorBypass( 0.3, 0.08 )
+				end
 			end
 			baseX = baseX - ( effectControlSetting[10]._sizeX ) / 2
 			SetAnimation_CounterAttack(target.effectList[10], baseX, baseY , timeRate)
 
 		elseif ( 4 == additionalDamageType ) then
-			if attackeeIsSelfPlayer then
-				target.effectList[12]:AddEffect( "Ui_Damage_Airattack", false, 0, 0 )
-				render_setPointBlur( 0.04, 0.03 )
-				render_setColorBypass( 0.8, 0.15 )
-				render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+			if ( 1 == effectType ) then
+				if attackeeIsSelfPlayer then
+					target.effectList[12]:AddEffect( "Ui_Damage_CriticalAirattack_Red", false, 0, 0 )
+					render_setPointBlur( 0.04, 0.03 )
+					render_setColorBypass( 0.8, 0.15 )
+					render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+				else
+					target.effectList[12]:AddEffect( "Ui_Damage_CriticalAirattack_White", false, 0, 0 )
+					-- ♬ 에어 어택 사운드!
+					audioPostEvent_SystemUi(14,05)
+					render_setChromaticBlur( 55, 0.15 )
+					render_setPointBlur( 0.025, 0.03 )
+					render_setColorBypass( 0.3, 0.08 )
+				end
 			else
-				target.effectList[12]:AddEffect( "Ui_Damage_Airattack", false, 0, 0 )
-				-- ♬ 에어 어택 사운드!
-				audioPostEvent_SystemUi(14,05)
-				render_setChromaticBlur( 55, 0.15 )
-				render_setPointBlur( 0.025, 0.03 )
-				render_setColorBypass( 0.3, 0.08 )
+				if attackeeIsSelfPlayer then
+					target.effectList[12]:AddEffect( "Ui_Damage_Airattack", false, 0, 0 )
+					render_setPointBlur( 0.04, 0.03 )
+					render_setColorBypass( 0.8, 0.15 )
+					render_setColorBalance( float3 (-0.3, 0.0, 0.0), 0.12 )
+				else
+					target.effectList[12]:AddEffect( "Ui_Damage_Airattack", false, 0, 0 )
+					-- ♬ 에어 어택 사운드!
+					audioPostEvent_SystemUi(14,05)
+					render_setChromaticBlur( 55, 0.15 )
+					render_setPointBlur( 0.025, 0.03 )
+					render_setColorBypass( 0.3, 0.08 )
+				end
 			end
 			baseX = baseX - ( effectControlSetting[12]._sizeX ) / 2
 			SetAnimation_CounterAttack(target.effectList[12], baseX, baseY , timeRate)

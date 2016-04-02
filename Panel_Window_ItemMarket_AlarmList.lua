@@ -2,8 +2,8 @@ local UI_TM			= CppEnums.TextMode
 local UI_color		= Defines.Color
 local UI_ANI_ADV	= CppEnums.PAUI_ANIM_ADVANCE_TYPE
 
-Panel_ItemMarket_AlarmList:RegisterShowEventFunc( true, 'ItemMarketAlarm_ShowAni()' )
-Panel_ItemMarket_AlarmList:RegisterShowEventFunc( false, 'ItemMarketAlarm_HideAni()' )
+Panel_ItemMarket_AlarmList:RegisterShowEventFunc( true, 'ItemMarketAlarmList_ShowAni()' )
+Panel_ItemMarket_AlarmList:RegisterShowEventFunc( false, 'ItemMarketAlarmList_HideAni()' )
 
 Panel_ItemMarket_AlarmList:SetShow( false, false )
 Panel_ItemMarket_AlarmList:ActiveMouseEventEffect(true)
@@ -240,7 +240,7 @@ function ItemMarketAlarm:Close()
 end
 
 
-function ItemMarketAlarm_ShowAni()
+function ItemMarketAlarmList_ShowAni()
 	local aniInfo1 = Panel_ItemMarket_AlarmList:addScaleAnimation( 0.0, 0.08, UI_ANI_ADV.PAUI_ANIM_ADVANCE_COS_HALF_PI)
 	aniInfo1:SetStartScale(0.5)
 	aniInfo1:SetEndScale(1.12)
@@ -257,7 +257,7 @@ function ItemMarketAlarm_ShowAni()
 	aniInfo2.ScaleType = 2
 	aniInfo2.IsChangeChild = true
 end
-function ItemMarketAlarm_HideAni()
+function ItemMarketAlarmList_HideAni()
 	local aniInfo1 = Panel_ItemMarket_AlarmList:addColorAnimation( 0.0, 0.1, UI_ANI_ADV.PAUI_ANIM_ADVANCE_SIN_HALF_PI)
 		aniInfo1:SetStartColor( UI_color.C_FFFFFFFF )
 		aniInfo1:SetEndColor( UI_color.C_00FFFFFF )

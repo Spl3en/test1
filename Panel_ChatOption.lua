@@ -29,12 +29,13 @@ local chanel_Guild 				= false
 local chanel_WorldWithItem		= false
 local channel_Battle			= false
 local channel_LocalWar			= false
+local channel_RolePlay			= false
 local _alphaPosX				= 0
 
 local chatOptionData = {
 		makeChatPanelCount		= 5,
 
-		chatFilterCount			= 10,
+		chatFilterCount			= 11,				--
 		_slotsCols				= 2,
 		slotStartX				= 0,
 		slotGapX				= 150,
@@ -59,6 +60,7 @@ local _msgFilter_Guild			= UI.getChildControl( Panel_ChatOption, 	"RadioButton_f
 local _msgFilter_WorldWithItem	= UI.getChildControl( Panel_ChatOption,		"RadioButton_filter_WorldWithItem" )
 local _msgFilter_Battle			= UI.getChildControl( Panel_ChatOption,		"RadioButton_filter_Battle" )
 local _msgFilter_LocalWar		= UI.getChildControl( Panel_ChatOption,		"RadioButton_filter_LocalWar" )
+local _msgFilter_RolePlay		= UI.getChildControl( Panel_ChatOption,		"RadioButton_filter_RolePlay" )
 
 local _alpha_0					= UI.getChildControl( Panel_ChatOption, 	"StaticText_PanelTransparency_0" ) 
 local _alpha_50					= UI.getChildControl( Panel_ChatOption, 	"StaticText_PanelTransparency_50" )
@@ -70,6 +72,9 @@ local _button_Confirm			= UI.getChildControl( Panel_ChatOption, 	"Button_Confirm
 local _button_Cancle			= UI.getChildControl( Panel_ChatOption, 	"Button_Cancle" )
 local _button_Close				= UI.getChildControl( Panel_ChatOption, 	"Button_WinClose" )
 local _button_blockList			= UI.getChildControl( Panel_ChatOption,		"Button_BlockList" )
+local msgFilterBg_SizeY			= _msgFilter_BG:GetSizeY()
+local panelSizeY				= Panel_ChatOption:GetSizeY()
+local buttonSizeY 				= _button_Confirm:GetPosY()
 
 local _buttonQuestion	= UI.getChildControl( Panel_ChatOption, "Button_Question" )								--물음표 버튼
 _buttonQuestion			: addInputEvent( "Mouse_LUp", "Panel_WebHelper_ShowToggle( \"Chatting\" )" )			--물음표 좌클릭
@@ -133,7 +138,13 @@ function HandleClicked_ChattingTypeFilter_LocalWar( panelIndex )
 	local check = btnFilter[9].chatFilter:IsCheck()
 	channel_LocalWar = check
 end
+function HandleClicked_ChattingTypeFilter_RolePlay( panelIndex )
+	local self = chatOptionData
+	local check = btnFilter[10].chatFilter:IsCheck()
+	channel_RolePlay = check
+end
 
+local optionCount = 0
 function ChattingOption_Initialize( panelIdex, _transparency, isCombinedMainPanel )
 	local self = chatOptionData
 	_ChatOption_Title:SetText( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_CHATTING_OPTION_TITLE", "panel_Index", panelIdex+1  ) )
@@ -150,8 +161,11 @@ function ChattingOption_Initialize( panelIdex, _transparency, isCombinedMainPane
 	_msgFilter_WorldWithItem	:SetShow( false )
 	_msgFilter_Battle			:SetShow( false )
 	_msgFilter_LocalWar			:SetShow( false )
+	_msgFilter_RolePlay			:SetShow( false )
 
+	local roleplayTypeOpen = isGameTypeEnglish() or isGameServiceTypeDev()		-- 롤플레이 타입은 북미와 개발만 보인다!
 	if not chatPanel[panelIdex] then
+		optionCount = 0
 		for idx=0, self.chatFilterCount-1 do
 			local btn = {}
 			btn.chatFilter	= UI.createControl( CppEnums.PA_UI_CONTROL_TYPE.PA_UI_CONTROL_CHECKBUTTON, _msgFilter_BG, "ChatOption_Btn_" .. idx )
@@ -165,9 +179,14 @@ function ChattingOption_Initialize( panelIdex, _transparency, isCombinedMainPane
 			else
 				index = idx
 			end
+			
+			if 10 == idx and not roleplayTypeOpen then
+				break
+			end
 
 			local row = math.floor( index / self._slotsCols )
 			local col = index % self._slotsCols
+			optionCount = index + 1
 
 			btn.chatFilter:SetPosX( self.slotStartX + self.slotGapX * col )
 			btn.chatFilter:SetPosY( self.slotStartY + self.slotGapY * row )
@@ -226,12 +245,28 @@ function ChattingOption_Initialize( panelIdex, _transparency, isCombinedMainPane
 			elseif 9 == idx then
 				btnFilter[9].chatFilter:SetCheck( chat:isShowChatType( UI_CT.LocalWar) )
 				btnFilter[9].chatFilter:SetText( PAGetString(Defines.StringSheet_RESOURCE, "PANEL_CHATTING_OPTION_FILTER_LOCALWAR") ) -- 전장 채팅
-				btnFilter[9].chatFilter:SetShow( localWarIsOpen )
+				btnFilter[9].chatFilter:SetShow( true )
 				btnFilter[9].chatFilter:addInputEvent( "Mouse_LUp", "HandleClicked_ChattingTypeFilter_LocalWar( " .. panelIdex .. " )" )
+			elseif 10 == idx then
+				btnFilter[10].chatFilter:SetCheck( chat:isShowChatType( UI_CT.LocalWar) )
+				btnFilter[10].chatFilter:SetText( "RolePlay" ) -- 전장 채팅
+				btnFilter[10].chatFilter:SetShow( true )
+				btnFilter[10].chatFilter:addInputEvent( "Mouse_LUp", "HandleClicked_ChattingTypeFilter_RolePlay( " .. panelIdex .. " )" )
 			end
 		end
 		chatPanel[panelIdex] = true
 	end
+	local optionLineCount = math.ceil(optionCount/2)
+	local lineGapY = 30
+	if optionLineCount <= 5 then
+		optionLineCount = 5
+	end
+	Panel_ChatOption:SetSize( Panel_ChatOption:GetSizeX(), panelSizeY + (optionLineCount-5)*lineGapY )
+	_msgFilter_BG:SetSize( _msgFilter_BG:GetSizeX(), msgFilterBg_SizeY + (optionLineCount-5)*lineGapY )
+	_button_Confirm:SetPosY( buttonSizeY + (optionLineCount-5)*lineGapY )
+	_button_Cancle:SetPosY( buttonSizeY + (optionLineCount-5)*lineGapY )
+	_button_blockList:SetPosY( buttonSizeY + (optionLineCount-5)*lineGapY )
+	_PA_LOG("이문종", "buttonSizeY : " .. buttonSizeY)
 
 	btnFilter[0].chatFilter			:SetCheck( chat:isShowChatType( UI_CT.Notice ) )
 	btnFilter[1].chatFilter			:SetCheck( chat:isShowChatType( UI_CT.System ) )
@@ -243,6 +278,9 @@ function ChattingOption_Initialize( panelIdex, _transparency, isCombinedMainPane
 	btnFilter[2].chatFilter			:SetCheck( chat:isShowChatType( UI_CT.WorldWithItem) )
 	btnFilter[8].chatFilter			:SetCheck( chat:isShowChatType( UI_CT.Battle) )
 	btnFilter[9].chatFilter			:SetCheck( chat:isShowChatType( UI_CT.LocalWar) )
+	if roleplayTypeOpen then
+		btnFilter[10].chatFilter		:SetCheck( chat:isShowChatType( UI_CT.RolePlay) )
+	end
 
 	-- _msgFilter_Notice:	SetFontColor( UI_color.C_FFFFEF82 )
 	-- _msgFilter_System:	SetFontColor( UI_color.C_FFC4BEBE )
@@ -262,6 +300,9 @@ function ChattingOption_Initialize( panelIdex, _transparency, isCombinedMainPane
 	chanel_WorldWithItem	= chat:isShowChatType( UI_CT.WorldWithItem )
 	channel_Battle			= chat:isShowChatType( UI_CT.Battle )
 	channel_LocalWar		= chat:isShowChatType( UI_CT.LocalWar )
+	if roleplayTypeOpen then
+		channel_RolePlay		= chat:isShowChatType( UI_CT.RolePlay )
+	end
 
 	-- _msgFilter_Notice:	addInputEvent( "Mouse_LUp", "HandleClicked_ChattingTypeFilter_Notice( " .. panelIdex .. " )" )
 	-- _msgFilter_System:	addInputEvent( "Mouse_LUp", "HandleClicked_ChattingTypeFilter_System( " .. panelIdex .. " )" )
@@ -318,6 +359,7 @@ function HandleClicked_ChattingOption_SetFilter( panelIdex )
 	chat:setShowChatType( UI_CT.WorldWithItem,	chanel_WorldWithItem )
 	chat:setShowChatType( UI_CT.Battle,			channel_Battle )
 	chat:setShowChatType( UI_CT.LocalWar,		channel_LocalWar )
+	chat:setShowChatType( UI_CT.RolePlay,		channel_RolePlay )
 	
 	local _transparency = ( _alphaSlider_ControlBTN:GetPosX() / ( _alphaSlider_Control:GetSizeX() - _alphaSlider_ControlBTN:GetSizeX() ))
 	chat:setTransparency( _transparency )

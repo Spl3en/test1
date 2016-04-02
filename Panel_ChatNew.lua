@@ -12,38 +12,43 @@ local IM			= CppEnums.EProcessorInputMode
 local currentPoolIndex		= nil
 local clickedMessageIndex	= nil
 local clickedName			= nil
+local clickedMsg			= nil
 local isMouseOnChattingViewIndex	= nil;
 local isMouseOn = false
 
+local isReportGoldSellerOpen	= ToClient_IsContentsGroupOpen( CppEnums.ContentsGroupType.ContentsGroupKey, 89 )	-- 구매 예약 오픈 확인.
+
 local ChatSubMenu =
 {
-	_mainPanel				= Panel_Chat_SubMenu,
-	_uiBg					= UI.getChildControl(Panel_Chat_SubMenu, 'Static_SubMenu'),
-	_uiButtonWhisper		= UI.getChildControl(Panel_Chat_SubMenu, 'Button_Whisper'),
-	_uiButtonAddFriend		= UI.getChildControl(Panel_Chat_SubMenu, 'Button_AddFriend'),
-	_uiButtonInviteParty	= UI.getChildControl(Panel_Chat_SubMenu, 'Button_InviteParty'),
-	_uiButtonInviteGuild	= UI.getChildControl(Panel_Chat_SubMenu, 'Button_InviteGuild'),
-	_uiButtonBlock			= UI.getChildControl(Panel_Chat_SubMenu, 'Button_Block'),
-	_uiButtonBlockVote		= UI.getChildControl(Panel_Chat_SubMenu, 'Button_BlockVote'),
-	_uiButtonIntroduce		= UI.getChildControl(Panel_Chat_SubMenu, "Button_ShowIntroduce" ),
-	_uiButtonWinClose		= UI.getChildControl(Panel_Chat_SubMenu, 'Button_WinClose'),
+	_mainPanel					= Panel_Chat_SubMenu,
+	_uiBg						= UI.getChildControl(Panel_Chat_SubMenu, 'Static_SubMenu'),
+	_uiButtonWhisper			= UI.getChildControl(Panel_Chat_SubMenu, 'Button_Whisper'),
+	_uiButtonAddFriend			= UI.getChildControl(Panel_Chat_SubMenu, 'Button_AddFriend'),
+	_uiButtonInviteParty		= UI.getChildControl(Panel_Chat_SubMenu, 'Button_InviteParty'),
+	_uiButtonInviteGuild		= UI.getChildControl(Panel_Chat_SubMenu, 'Button_InviteGuild'),
+	_uiButtonBlock				= UI.getChildControl(Panel_Chat_SubMenu, 'Button_Block'),
+	_uiButtonReportGoldSeller	= UI.getChildControl(Panel_Chat_SubMenu, 'Button_ReportGoldSeller'),
+	_uiButtonBlockVote			= UI.getChildControl(Panel_Chat_SubMenu, 'Button_BlockVote'),
+	_uiButtonIntroduce			= UI.getChildControl(Panel_Chat_SubMenu, "Button_ShowIntroduce" ),
+	_uiButtonWinClose			= UI.getChildControl(Panel_Chat_SubMenu, 'Button_WinClose'),
 }
 
 local partyPosY = ChatSubMenu._uiButtonInviteParty:GetPosY()
 local guildPosY = ChatSubMenu._uiButtonInviteGuild:GetPosY()
 
 function ChatSubMenu:initialize()
-	self._uiBg					:addInputEvent("Mouse_On", "HandleOn_ChattingSubMenu()" )
-	self._uiButtonWhisper		:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_SendWhisper()")
-	self._uiButtonAddFriend		:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_AddFriend()")
-	self._uiButtonInviteParty	:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_InviteParty()")
-	self._uiButtonInviteGuild	:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_InviteGuild()")
-	self._uiButtonWinClose		:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_Close()")
-	self._uiButtonBlock			:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_Block()")
-	self._uiButtonBlockVote		:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_BlockVote()")
-	self._uiButtonIntroduce		:addInputEvent("Mouse_LUp",	"HanldeClicked_ChatSubMenu_Introduce()" )
-	self._uiButtonIntroduce		:SetShow( false )
-	self._uiBg					:SetIgnore( false )
+	self._uiBg						:addInputEvent("Mouse_On", "HandleOn_ChattingSubMenu()" )
+	self._uiButtonWhisper			:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_SendWhisper()")
+	self._uiButtonAddFriend			:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_AddFriend()")
+	self._uiButtonInviteParty		:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_InviteParty()")
+	self._uiButtonInviteGuild		:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_InviteGuild()")
+	self._uiButtonWinClose			:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_Close()")
+	self._uiButtonBlock				:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_Block()")
+	self._uiButtonReportGoldSeller	:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_ReportGoldSeller()")
+	self._uiButtonBlockVote			:addInputEvent("Mouse_LUp", "HandleClicked_ChatSubMenu_BlockVote()")
+	self._uiButtonIntroduce			:addInputEvent("Mouse_LUp",	"HanldeClicked_ChatSubMenu_Introduce()" )
+	self._uiButtonIntroduce			:SetShow( false )
+	self._uiBg						:SetIgnore( false )
 	self:SetShow( false )
 end
 
@@ -59,40 +64,46 @@ end
 
 function ChatSubMenu:SetShow( isShow, isInviteParty, isInviteGuild, clickedName )
 	if isShow then
-		local bgSizeY = 185
-		if isGameTypeJapan() then					-- 한국이 아니면 채팅 금지 요청 버튼을 꺼준다!
-			self._uiButtonBlockVote:SetShow( false )
-			bgSizeY = bgSizeY - 35
-			self._uiButtonInviteParty:SetPosY( partyPosY - 35 )
-			self._uiButtonInviteGuild:SetPosY( guildPosY - 35 )
+		local bgSizeY		= 145
+		local buttonPosY	= 140
+		local gapY			= 35
+		local isCountryShow = true
+		if isGameTypeKorea() then
+			isCountryShow = true
+		elseif isGameTypeEnglish() then
+			isCountryShow = false
+		elseif isGameTypeJapan() then
+			isCountryShow = false
+		elseif isGameTypeRussia() then
+			isCountryShow = true
 		end
-		
-		self._uiButtonInviteParty:SetShow(isInviteParty)
-		self._uiButtonInviteGuild:SetShow(isInviteGuild)
-		
-		if not isInviteParty then
-			self._uiButtonInviteGuild:SetPosY( self._uiButtonInviteParty:GetPosY() )
+		self._uiButtonBlockVote			:SetShow( isCountryShow )
+		self._uiButtonReportGoldSeller	:SetShow( isReportGoldSellerOpen )
+		self._uiButtonInviteParty		:SetShow(isInviteParty)
+		self._uiButtonInviteGuild		:SetShow(isInviteGuild)
+
+		if self._uiButtonBlockVote:GetShow() then
+			self._uiButtonBlockVote:SetPosY( buttonPosY )
+			buttonPosY	= buttonPosY + gapY
+			bgSizeY		= bgSizeY + gapY
 		end
-		
-		--[[
-		if isInviteParty and isInviteGuild then
-			bgSizeY = 215
-			self._uiButtonInviteGuild:SetSpanSize( 0, 129 )
-		elseif isInviteParty or isInviteGuild then
-			bgSizeY = 215 - 35
-			if isInviteGuild then
-				self._uiButtonInviteGuild:SetSpanSize( 0, 95 )
-			end
+
+		if self._uiButtonReportGoldSeller:GetShow() then
+			self._uiButtonReportGoldSeller:SetPosY( buttonPosY )
+			buttonPosY	= buttonPosY + gapY
+			bgSizeY		= bgSizeY + gapY
 		end
-		]]--
-		
-		--local spanX = 0
-		
-		if isInviteParty then
-			bgSizeY = bgSizeY + 35
+
+		if self._uiButtonInviteParty:GetShow() then
+			self._uiButtonInviteParty:SetPosY( buttonPosY )
+			buttonPosY	= buttonPosY + gapY
+			bgSizeY		= bgSizeY + gapY
 		end
-		if isInviteGuild then
-			bgSizeY = bgSizeY + 35
+
+		if self._uiButtonInviteGuild:GetShow() then
+			self._uiButtonInviteGuild:SetPosY( buttonPosY )
+			buttonPosY	= buttonPosY + gapY
+			bgSizeY		= bgSizeY + gapY
 		end
 		
 		self._uiBg:SetText( clickedName )
@@ -101,6 +112,7 @@ function ChatSubMenu:SetShow( isShow, isInviteParty, isInviteGuild, clickedName 
 		currentPoolIndex	= nil
 		clickedMessageIndex	= nil
 		clickedName			= nil
+		clickedMsg			= nil
 	end
 	self._mainPanel:SetShow( isShow )
 end
@@ -629,10 +641,6 @@ function ChattingViewManager:update(chatPanel, panelIndex, isShow )
 	local chattingMessage = chatPanel:beginMessage( messageIndex )
 	local chatting_content_PosY = currentPanel:GetSizeY() - 10					-- 채팅 콘텐츠 기본 위치(아래서부터 위로 출력)
 
-	
-
-	--ToClient_LuaDebugCallStack()
-	
 	while nil ~= chattingMessage do
 		-- 채팅 메시지를 뿌리고, 위치 값을 반환
 		chatting_content_PosY = self:CreateChattingContent( chattingMessage, poolCurrentUI, chatting_content_PosY, messageIndex )
@@ -689,7 +697,7 @@ function ChattingViewManager:CreateChattingContent( chattingMessage, poolCurrent
 				audioPostEvent_SystemUi(08,14)
 			elseif isSoundAlert and not isFocusInChatting() then	-- 이미 채팅중이면 소리를 낼 필요가 없다. 관심을 가지고 있다는 의미
 				-- ♬ 귓속말 올 때 소리난다요
-				audioPostEvent_SystemUi(08,13)
+				--audioPostEvent_SystemUi(08,13)
 			end
 		end
 	--elseif chatType == CppEnums.ChatType.Party then
@@ -889,38 +897,19 @@ function ChattingViewManager:CreateChattingContent( chattingMessage, poolCurrent
 		chatting_sender:SetShow( true )
 		
 		msg = chattingMessage:getContent()
+		
 		-- msg = " : " .. msg
 		local remainSizeX = panelSizeX - chattingContentPosX
 		chatting_contents[0] = poolCurrentUI:newChattingContents()
 		chatting_contents[0]:SetSize( remainSizeX - senderDefaultPosX, chatting_sender:GetSizeY() )
 
 		chatting_contents[0]:SetTextMode( UI_TM.eTextMode_AutoWrap )
-		msgData = msg
-
+		
+		chatting_contents[0]:SetAutoResize( true )
 		chatting_contents[0]:SetText( msg )
 		chatting_contents[0]:SetShow( true )
 		chatting_contents[0]:SetFontColor( msgColor )
-		chatting_contents[0]:SetAutoResize( true )
-
-		local msgDataLen = string.len( msgData )
-		local msgLen = string.len( msg )
-		
-		
-
-		--if msgDataLen < msgLen then
-		--	chatting_contents[1] = poolCurrentUI:newChattingContents()
-		--	chatting_contents[1]:SetSize( remainSizeX + senderAddOverSizeX- senderDefaultPosX, chatting_sender:GetSizeY())
-		--	chatting_contents[1]:SetAutoResize( true )
-		--	chatting_contents[1]:SetTextMode( UI_TM.eTextMode_AutoWrap )
-		--	local msgStr = string.sub(msg, msgDataLen+1, msgLen)
-		--	chatting_contents[1]:SetText( msgStr )
-		--	chatting_contents[1]:SetPosX( chatting_sender_sizeX + senderDefaultPosX )
-		--	PosY = PosY - chatting_contents[1]:GetSizeY()
-		--	chatting_contents[1]:SetPosY( PosY )
-		--	chatting_contents[1]:SetShow( true )
-		--	chatting_contents[1]:SetFontColor( msgColor )
-		--end
-
+				
 		chatting_Icon:SetPosY( PosY - chatting_contents[0]:GetSizeY() + 3 )
 		chatting_sender:SetPosY( PosY - chatting_contents[0]:GetSizeY() )
 		chatting_contents[0]:SetPosY( chatting_sender:GetPosY() )	-- chatting_sender:GetPosY()
@@ -1375,6 +1364,7 @@ function HandleClicked_ChattingSender( poolIndex, senderStaticIndex )
 
 	if nil ~= chattingMessage then
 		clickedName = chattingMessage:getSender()
+		clickedMsg	= chattingMessage:getContent()
 		chatType = chattingMessage.chatType
 		isSameChannel = chattingMessage.isSameChannel
 		currentPoolIndex = paramIndex
@@ -1389,6 +1379,7 @@ function HandleClicked_ChattingSender( poolIndex, senderStaticIndex )
 		end
 	else
 		clickedName = nil
+		clickedMsg = nil
 		currentPoolIndex = nil
 		clickedMessageIndex = nil
 	end
@@ -1415,6 +1406,7 @@ function HandleClicked_ChatSubMenu_SendWhisper()
 		ChatSubMenu:SetShow(false)
 		
 		clickedName = nil
+		clickedMsg	= nil
 		currentPoolIndex = nil
 		clickedMessageIndex = nil
 	end
@@ -1426,6 +1418,7 @@ function HandleClicked_ChatSubMenu_AddFriend()
 		ChatSubMenu:SetShow(false)
 		
 		clickedName = nil
+		clickedMsg = nil
 		currentPoolIndex = nil
 		clickedMessageIndex = nil
 	end
@@ -1438,6 +1431,7 @@ function HandleClicked_ChatSubMenu_InviteParty()
 		ChatSubMenu:SetShow(false)
 		
 		clickedName = nil
+		clickedMsg = nil
 		currentPoolIndex = nil
 		clickedMessageIndex = nil
 	end
@@ -1467,6 +1461,7 @@ function FromClient_requestInviteGuildByChatSubMenu( actorKeyRaw )
 	end
 	
 	clickedName = nil
+	clickedMsg = nil
 	currentPoolIndex = nil
 	clickedMessageIndex = nil
 end
@@ -1478,6 +1473,7 @@ function HandleClicked_ChatSubMenu_Block()
 			ChatSubMenu:SetShow(false)
 			
 			clickedName = nil
+			clickedMsg = nil
 			currentPoolIndex = nil
 			clickedMessageIndex = nil
 		end
@@ -1488,6 +1484,25 @@ function HandleClicked_ChatSubMenu_Block()
 	end
 end
 
+function HandleClicked_ChatSubMenu_ReportGoldSeller()
+	local selfProxy		= getSelfPlayer():get()
+	local inventory		= selfProxy:getCashInventory()
+	local hasItem		= inventory:getItemCount_s64( ItemEnchantKey(65208,0) ) -- 보안관 증표(캐쉬 인벤토리로 들어간다)
+	if toInt64(0,0) == hasItem then
+		Proc_ShowMessage_Ack( PAGetString(Defines.StringSheet_GAME, "LUA_CHATNEW_NO_HAVE_ITEM") )
+		return
+	end
+	local limitLevel = 20
+	if getSelfPlayer():get():getLevel() < limitLevel then
+		Proc_ShowMessage_Ack( PAGetStringParam1( Defines.StringSheet_GAME, "LUA_CHATNEW_GOLDSELLERITEM_LIMITLEVEL", "limitLevel", limitLevel ) ) -- "more than" .. limitLevel .. "level." )
+		return
+	end
+
+	if nil ~= currentPoolIndex and nil ~= clickedMessageIndex and nil ~= clickedMsg then
+		FGlobal_reportSeller_Open( clickedName, clickedMsg )
+	end
+end
+
 function HandleClicked_ChatSubMenu_BlockVote()
 	if nil ~= currentPoolIndex and nil ~= clickedMessageIndex then
 		local chatBlockVote = function()
@@ -1495,6 +1510,7 @@ function HandleClicked_ChatSubMenu_BlockVote()
 			ChatSubMenu:SetShow(false)
 
 			clickedName = nil
+			clickedMsg = nil
 			currentPoolIndex = nil
 			clickedMessageIndex = nil
 		end
@@ -1675,10 +1691,21 @@ function FGlobal_InputModeChangeForChatting()
 	end
 end
 
+local saveWhisperTime = getTime()
+local checkWhistperTime = toUint64(0,60000)
+local sendPossibleTime = toUint64(0,0)-- getTime() + checkWhistperTime
+function FromClient_PrivateChatMessageUpdate()
+	if sendPossibleTime <= getTime() then
+		audioPostEvent_SystemUi(100,00)
+		sendPossibleTime = getTime() + checkWhistperTime
+	end
+end
+
 registerEvent( "EventSimpleUIEnable",			"Chatting_EnableSimpleUI")
 registerEvent( "EventSimpleUIDisable",			"Chatting_EnableSimpleUI")
 
 registerEvent( "EventChattingMessageUpdate",	"FromClient_ChatUpdate" )
 registerEvent( "onScreenResize", 				"Chatting_OnResize")
 registerEvent( "EventProcessorInputModeChange",	"FGlobal_InputModeChangeForChatting")
-registerEvent( "FromClient_requestInviteGuildByChatSubMenu", "FromClient_requestInviteGuildByChatSubMenu" )
+registerEvent( "FromClient_requestInviteGuildByChatSubMenu", "FromClient_requestInviteGuildByChatSubMenu" )
+registerEvent( "FromClient_PrivateChatMessageUpdate", "FromClient_PrivateChatMessageUpdate" )

@@ -909,7 +909,8 @@ local inputData = {
 }
 
 local settingCircleInputData = function()
-	local targetPos = getSelfPlayer():get():getCameraTargetPos()
+	local knowledge = getSelfPlayer():get():getMentalKnowledge()
+	local targetPos = knowledge:getCameraTargetPos()
 	targetPos.y = targetPos.y + 30
 
 	local isChangedPos = (inputData.position ~= targetPos)

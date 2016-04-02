@@ -555,6 +555,17 @@ function FGlobal_ItemMarket_InvenFilter_IsRegistItem(slotNo, itemWrapper, invenW
 
 	local isAble = requestIsRegisterItemForItemMarket(itemWrapper:get():getKey())
 	local itemBindType = itemWrapper:getStaticStatus():get()._vestedType:getItemKey()
+
+	local isVested			= itemWrapper:get():isVested()
+	local isPersonalTrade	= itemWrapper:getStaticStatus():isPersonalTrade()
+
+	if (isUsePcExchangeInLocalizingValue()) then
+		local isFilter = ( isVested and isPersonalTrade )
+		if( isFilter ) then
+			return isFilter
+		end
+	end
+
 	if 2 == itemBindType then	--	 귀속 아이템 처리
 		if true ~= itemWrapper:get():isVested() and isAble then -- 아직 귀속전템이며 등록가능한 아이템이라면
 			isAble = true
